@@ -1,5 +1,6 @@
 package com.godafret.godafret_bank
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 
-class MainActivity : FlutterActivity()
+// FlutterFragmentActivity est requis par local_auth (biométrie).
+class MainActivity : FlutterFragmentActivity()

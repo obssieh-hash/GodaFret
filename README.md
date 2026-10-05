@@ -1,3 +1,13 @@
+# GodaFret
+
+Ce dépôt contient deux projets :
+
+| Dossier | Contenu |
+|---|---|
+| [`mobile/`](mobile/README.md) | **GodaFret Banque** : application mobile Flutter (connexion + PIN, MFA/OTP, solde, dépôt, retrait, transfert interne, prêt, échéancier, remboursement, historique, notifications, tableau de bord) sur Apache Fineract |
+| [`infra/`](infra/README.md) | Serveur Ubuntu : Fineract + Mifos X + PostgreSQL + Keycloak (MFA) + Caddy, en Docker Compose |
+| racine | Desk d'investissement GodaFret (Streamlit), décrit ci-dessous |
+
 # GodaFret — Desk d'investissement
 
 Outil d'analyse d'investissement qui calcule avec **de vraies données de marché** les 7 méthodes

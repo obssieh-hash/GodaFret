@@ -45,12 +45,12 @@ class AppConfig {
       ),
       fineractUrl: const String.fromEnvironment(
         'FINERACT_URL',
-        defaultValue: 'https://10.0.2.2:8443/fineract-provider/api/v1',
+        defaultValue: 'http://localhost:8082/fineract-provider/api/v1',
       ),
       tenant: const String.fromEnvironment('FINERACT_TENANT', defaultValue: 'default'),
       keycloakUrl: const String.fromEnvironment(
         'KEYCLOAK_URL',
-        defaultValue: 'http://10.0.2.2:8080',
+        defaultValue: 'http://localhost:8081',
       ),
       keycloakRealm: const String.fromEnvironment('KEYCLOAK_REALM', defaultValue: 'godafret'),
       keycloakClientId: const String.fromEnvironment(

@@ -6,8 +6,10 @@
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Face ID permet de déverrouiller l'application et de valider vos opérations.</string>
 	<key>CFBundleDisplayName</key>
-	<string>Godafret Bank</string>
+	<string>GodaFret Banque</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

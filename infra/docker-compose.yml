@@ -46,11 +46,12 @@ services:
         condition: service_healthy
     networks: [backend]
 
+  # Instance « back-office » : authentification Basic, utilisée par Mifos X.
+  # Elle applique les migrations de la base et exécute les traitements batch (COB).
   fineract:
     image: apache/fineract:latest
     restart: unless-stopped
-    environment:
-      # Base de données
+    environment: &fineract-env
       FINERACT_HIKARI_DRIVER_SOURCE_CLASS_NAME: org.postgresql.Driver
       FINERACT_HIKARI_JDBC_URL: jdbc:postgresql://postgres:5432/fineract_tenants
       FINERACT_HIKARI_USERNAME: fineract
@@ -67,7 +68,33 @@ services:
       FINERACT_SERVER_PORT: "8080"
       FINERACT_SERVER_SSL_ENABLED: "false"
       FINERACT_SECURITY_HSTS_ENABLED: "false"
-      # Authentification : Basic (back-office Mifos X) + jetons Keycloak (application mobile)
+      FINERACT_SECURITY_BASICAUTH_ENABLED: "true"
+      FINERACT_SECURITY_OIDC_FEDERATION_ENABLED: "false"
+      FINERACT_SECURITY_CORS_ALLOWED_ORIGIN_PATTERNS: https://${ADMIN_DOMAIN}
+      FINERACT_MANAGEMENT_ENDPOINT_WEB_EXPOSURE_INCLUDE: health
+      JAVA_TOOL_OPTIONS: "-Xmx2G -XX:+UseContainerSupport"
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "8080"]
+      interval: 15s
+      timeout: 5s
+      retries: 40
+      start_period: 120s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [backend]
+
+  # Instance « mobile » : n'accepte que les jetons Keycloak (OIDC Federation).
+  # Dans cette version de Fineract, la chaîne OIDC capte toutes les requêtes /api/**
+  # et l'authentification Basic n'y est plus possible : d'où deux instances
+  # sur la même base de données.
+  fineract-mobile:
+    image: apache/fineract:latest
+    restart: unless-stopped
+    environment:
+      <<: *fineract-env
+      # Doit rester « true » (beans requis au démarrage) ; la chaîne OIDC, prioritaire,
+      # traite de toute façon toutes les requêtes /api/** de cette instance.
       FINERACT_SECURITY_BASICAUTH_ENABLED: "true"
       FINERACT_SECURITY_OIDC_FEDERATION_ENABLED: "true"
       FINERACT_SECURITY_OIDC_PROVIDER: keycloak
@@ -76,13 +103,18 @@ services:
       FINERACT_SECURITY_OIDCFEDERATION_ISSUERS_0_ISSUERURI: https://${AUTH_DOMAIN}/realms/godafret
       FINERACT_SECURITY_OIDCFEDERATION_ISSUERS_0_TENANTID: ${FINERACT_TENANT:-default}
       FINERACT_SECURITY_OIDCFEDERATION_ISSUERS_0_JWKSURI: http://keycloak:8080/realms/godafret/protocol/openid-connect/certs
-      # CORS : uniquement le back-office
-      FINERACT_SECURITY_CORS_ALLOWED_ORIGIN_PATTERNS: https://${ADMIN_DOMAIN}
-      FINERACT_MANAGEMENT_ENDPOINT_WEB_EXPOSURE_INCLUDE: health
-      JAVA_TOOL_OPTIONS: "-Xmx2G -XX:+UseContainerSupport"
+      # Contournement d'un bug de Fineract (dépendance circulaire au démarrage quand OIDC est activé).
+      SPRING_MAIN_ALLOW_CIRCULAR_REFERENCES: "true"
+      # Les traitements batch restent sur l'instance back-office.
+      FINERACT_MODE_BATCH_WORKER_ENABLED: "false"
+      FINERACT_MODE_BATCH_MANAGER_ENABLED: "false"
+      # L'application mobile native n'envoie pas d'en-tête Origin : pas de CORS.
+      FINERACT_SECURITY_CORS_ENABLED: "false"
     depends_on:
-      postgres:
+      fineract:
         condition: service_healthy
+      keycloak:
+        condition: service_started
     networks: [backend]
 
   mifos-web-app:
@@ -110,7 +142,7 @@ services:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
-    depends_on: [fineract, keycloak, mifos-web-app]
+    depends_on: [fineract, fineract-mobile, keycloak, mifos-web-app]
     networks: [backend]
 
 volumes:

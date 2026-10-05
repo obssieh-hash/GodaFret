@@ -1,0 +1,17 @@
+# Surcharge pour tester la pile sur un poste (HTTP, sans Caddy ni Mifos X).
+# docker compose -f docker-compose.yml -f docker-compose.local.yml up -d postgres keycloak fineract fineract-mobile
+services:
+  keycloak:
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_HOSTNAME: http://localhost:8081
+  fineract:
+    ports: ["127.0.0.1:8080:8080"]
+  fineract-mobile:
+    ports: ["127.0.0.1:8082:8080"]
+    environment:
+      FINERACT_SECURITY_OIDCFEDERATION_ISSUERS_0_ISSUERURI: http://localhost:8081/realms/godafret
+  mifos-web-app:
+    profiles: ["web"]
+  caddy:
+    profiles: ["web"]

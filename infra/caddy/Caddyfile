@@ -11,7 +11,7 @@
 		X-Content-Type-Options nosniff
 		-Server
 	}
-	reverse_proxy fineract:8080
+	reverse_proxy fineract-mobile:8080
 }
 
 # Console Mifos X (back-office) — à restreindre au réseau de l'agence
