@@ -79,6 +79,35 @@ class AppConfig {
 
   bool get isDemo => authMode == AuthMode.demo;
 
+  AppConfig copyWith({AuthMode? authMode, String? fineractUrl, String? keycloakUrl}) => AppConfig(
+        authMode: authMode ?? this.authMode,
+        fineractUrl: fineractUrl ?? this.fineractUrl,
+        tenant: tenant,
+        keycloakUrl: keycloakUrl ?? this.keycloakUrl,
+        keycloakRealm: keycloakRealm,
+        keycloakClientId: keycloakClientId,
+        mfaRequired: mfaRequired,
+        currency: currency,
+        lockAfter: lockAfter,
+      );
+
+  /// URLs déduites d'une adresse de serveur installé en réseau local
+  /// (`infra/install-local.sh`) : Keycloak sur 8081, API mobile sur 8082.
+  /// Une adresse commençant par http(s):// est utilisée telle quelle comme base.
+  static ({String fineract, String keycloak}) urlsForHost(String host) {
+    var h = host.trim();
+    while (h.endsWith('/')) {
+      h = h.substring(0, h.length - 1);
+    }
+    if (h.startsWith('http://') || h.startsWith('https://')) {
+      final uri = Uri.parse(h);
+      final base = '${uri.scheme}://${uri.host}';
+      return (fineract: '$base:8082/fineract-provider/api/v1', keycloak: '$base:8081');
+    }
+    final hostOnly = h.split(':').first;
+    return (fineract: 'http://$hostOnly:8082/fineract-provider/api/v1', keycloak: 'http://$hostOnly:8081');
+  }
+
   String get keycloakTokenUrl =>
       '$keycloakUrl/realms/$keycloakRealm/protocol/openid-connect/token';
 

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:godafret_bank/config/app_config.dart';
 import 'package:godafret_bank/core/formatters.dart';
 import 'package:godafret_bank/models/models.dart';
 import 'package:godafret_bank/services/api_client.dart';
@@ -135,5 +136,13 @@ void main() {
         contains('OTP'));
     expect(ApiException.from(err(400, {'error': 'invalid_grant', 'error_description': 'Account is not fully set up'})).message,
         contains('finalisé'));
+  });
+
+  test('URL déduites de l\'adresse du serveur local', () {
+    final a = AppConfig.urlsForHost(' 192.168.1.50 ');
+    expect(a.keycloak, 'http://192.168.1.50:8081');
+    expect(a.fineract, 'http://192.168.1.50:8082/fineract-provider/api/v1');
+    final b = AppConfig.urlsForHost('http://banque.lan/');
+    expect(b.keycloak, 'http://banque.lan:8081');
   });
 }

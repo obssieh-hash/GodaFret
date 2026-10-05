@@ -1,5 +1,7 @@
 # GodaFret
 
+➡️ **Installer sur un serveur Ubuntu du réseau local : [INSTALLATION-LOCALE.md](INSTALLATION-LOCALE.md)**
+
 Ce dépôt contient deux projets :
 
 | Dossier | Contenu |

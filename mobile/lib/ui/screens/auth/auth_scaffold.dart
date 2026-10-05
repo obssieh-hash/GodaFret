@@ -4,10 +4,13 @@ import '../../../core/theme.dart';
 
 /// Fond sombre dégradé commun aux écrans d'authentification.
 class AuthScaffold extends StatelessWidget {
-  const AuthScaffold({super.key, required this.child, this.onBack});
+  const AuthScaffold({super.key, required this.child, this.onBack, this.trailing});
 
   final Widget child;
   final VoidCallback? onBack;
+
+  /// Action en haut à droite (ex. réglages du serveur).
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -30,13 +33,17 @@ class AuthScaffold extends StatelessWidget {
             SafeArea(
               child: Column(
                 children: [
-                  if (onBack != null)
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: IconButton(
-                        onPressed: onBack,
-                        icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-                      ),
+                  if (onBack != null || trailing != null)
+                    Row(
+                      children: [
+                        if (onBack != null)
+                          IconButton(
+                            onPressed: onBack,
+                            icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                          ),
+                        const Spacer(),
+                        ?trailing,
+                      ],
                     ),
                   Expanded(child: child),
                 ],

@@ -1,0 +1,33 @@
+# Mode « réseau local » : pas de nom de domaine ni de Let's Encrypt, tout en HTTP sur l'IP du serveur.
+# Activé automatiquement par install-local.sh (COMPOSE_FILE dans .env).
+#   http://IP           → Mifos X (back-office)
+#   http://IP:8081      → Keycloak (connexion, MFA)
+#   http://IP:8082      → API Fineract pour l'application mobile
+# ⚠️ Réservé à un réseau local de confiance (HTTP non chiffré).
+services:
+  keycloak:
+    environment:
+      KC_HOSTNAME: http://${SERVER_IP:?définir SERVER_IP dans .env}:8081
+    ports: !override
+      - "8081:8080"
+
+  fineract:
+    environment:
+      FINERACT_SECURITY_CORS_ALLOWED_ORIGIN_PATTERNS: http://${SERVER_IP}
+
+  fineract-mobile:
+    environment:
+      FINERACT_SECURITY_OIDCFEDERATION_ISSUERS_0_ISSUERURI: http://${SERVER_IP}:8081/realms/godafret
+    ports:
+      - "8082:8080"
+
+  mifos-web-app:
+    environment:
+      FINERACT_API_URLS: http://${SERVER_IP}
+      FINERACT_API_URL: http://${SERVER_IP}
+
+  caddy:
+    ports: !override
+      - "80:80"
+    volumes:
+      - ./caddy/Caddyfile.lan:/etc/caddy/Caddyfile:ro

@@ -27,6 +27,9 @@ au démarrage avec OIDC). Les deux points ont été vérifiés avec l'image `apa
 
 ## Installation
 
+> Serveur du **réseau local, sans nom de domaine** : suivez [`../INSTALLATION-LOCALE.md`](../INSTALLATION-LOCALE.md)
+> (`install-local.sh` + `docker-compose.lan.yml`). La procédure ci-dessous concerne un serveur public avec HTTPS.
+
 Pré-requis : Ubuntu Server 22.04/24.04, 4 vCPU, 8 Go de RAM, 3 enregistrements DNS vers le serveur.
 
 ```bash

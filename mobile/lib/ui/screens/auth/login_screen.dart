@@ -6,6 +6,7 @@ import '../../../core/theme.dart';
 import '../../../state/session_controller.dart';
 import '../../widgets/common.dart';
 import 'auth_scaffold.dart';
+import 'server_sheet.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -38,6 +39,11 @@ class _LoginScreenState extends State<LoginScreen> {
     final session = context.watch<SessionController>();
     final config = session.config;
     return AuthScaffold(
+      trailing: IconButton(
+        tooltip: 'Serveur',
+        onPressed: () => showServerSheet(context, config),
+        icon: const Icon(Icons.settings_rounded, color: Colors.white70),
+      ),
       child: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -62,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: TextStyle(color: Colors.white60, fontSize: 15),
                   ),
                   const SizedBox(height: 14),
-                  Center(child: _ModeChip(config.authMode)),
+                  Center(child: _ModeChip(config)),
                   const SizedBox(height: 30),
                   TextFormField(
                     controller: _user,
@@ -117,14 +123,15 @@ class _LoginScreenState extends State<LoginScreen> {
 }
 
 class _ModeChip extends StatelessWidget {
-  const _ModeChip(this.mode);
-  final AuthMode mode;
+  const _ModeChip(this.config);
+  final AppConfig config;
 
   @override
   Widget build(BuildContext context) {
-    final (label, icon, color) = switch (mode) {
+    final host = Uri.tryParse(config.keycloakUrl)?.host ?? '';
+    final (label, icon, color) = switch (config.authMode) {
       AuthMode.demo => ('Mode démo · OTP 123456', Icons.science_outlined, AppColors.amber),
-      AuthMode.keycloak => ('Keycloak · MFA', Icons.verified_user_outlined, AppColors.teal),
+      AuthMode.keycloak => ('Serveur $host · MFA', Icons.verified_user_outlined, AppColors.teal),
       AuthMode.fineract => ('Fineract · 2FA', Icons.shield_outlined, AppColors.sky),
     };
     return Container(
@@ -135,7 +142,13 @@ class _ModeChip extends StatelessWidget {
         children: [
           Icon(icon, size: 16, color: color),
           const SizedBox(width: 6),
-          Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12.5)),
+          Flexible(
+            child: Text(
+              label,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12.5),
+            ),
+          ),
         ],
       ),
     );

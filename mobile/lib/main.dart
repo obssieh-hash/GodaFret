@@ -16,6 +16,7 @@ import 'services/demo_repository.dart';
 import 'services/fineract_repository.dart';
 import 'services/pin_service.dart';
 import 'services/secure_store.dart';
+import 'services/server_settings.dart';
 import 'state/bank_controller.dart';
 import 'state/session_controller.dart';
 import 'state/theme_controller.dart';
@@ -29,30 +30,73 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Intl.defaultLocale = 'fr_FR';
   await initializeDateFormatting('fr_FR');
+  runApp(const AppRoot());
+}
 
-  final config = AppConfig.fromEnvironment();
+/// Construit les services selon la configuration (compilation + serveur choisi
+/// dans l'application) et les reconstruit quand l'utilisateur change de serveur.
+class AppRoot extends StatefulWidget {
+  const AppRoot({super.key});
+
+  static AppRootState of(BuildContext context) => context.findAncestorStateOfType<AppRootState>()!;
+
+  @override
+  State<AppRoot> createState() => AppRootState();
+}
+
+class AppRootState extends State<AppRoot> {
   final store = SecureStore();
-  final AuthService auth = switch (config.authMode) {
-    AuthMode.demo => DemoAuthService(store),
-    AuthMode.keycloak => KeycloakAuthService(config, store),
-    AuthMode.fineract => FineractAuthService(config, store),
-  };
-  final BankRepository repo = config.isDemo
-      ? DemoRepository()
-      : FineractRepository(FineractApi(config, authHeaders: auth.authHeaders), auth);
+  late final settings = ServerSettings(store);
+  final theme = ThemeController();
+  SessionController? _session;
+  BankController? _bank;
+  int _generation = 0;
 
-  final session = SessionController(config: config, auth: auth, pin: PinService(store), store: store);
-  final bank = BankController(repo, onUnauthorized: session.onUnauthorized);
-  session.init();
+  @override
+  void initState() {
+    super.initState();
+    restart();
+  }
 
-  runApp(GodaFretApp(session: session, bank: bank));
+  /// (Re)crée l'authentification, l'accès aux données et la session.
+  Future<void> restart() async {
+    final config = await settings.apply(AppConfig.fromEnvironment());
+    final AuthService auth = switch (config.authMode) {
+      AuthMode.demo => DemoAuthService(store),
+      AuthMode.keycloak => KeycloakAuthService(config, store),
+      AuthMode.fineract => FineractAuthService(config, store),
+    };
+    final BankRepository repo = config.isDemo
+        ? DemoRepository()
+        : FineractRepository(FineractApi(config, authHeaders: auth.authHeaders), auth);
+    final session = SessionController(config: config, auth: auth, pin: PinService(store), store: store);
+    final bank = BankController(repo, onUnauthorized: session.onUnauthorized);
+    await session.init();
+    if (!mounted) return;
+    setState(() {
+      _session = session;
+      _bank = bank;
+      _generation++;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final session = _session;
+    final bank = _bank;
+    if (session == null || bank == null) {
+      return const MaterialApp(debugShowCheckedModeBanner: false, home: AuthScaffold(child: Center(child: BrandLogo(size: 84))));
+    }
+    return GodaFretApp(key: ValueKey(_generation), session: session, bank: bank, theme: theme);
+  }
 }
 
 class GodaFretApp extends StatelessWidget {
-  const GodaFretApp({super.key, required this.session, required this.bank});
+  const GodaFretApp({super.key, required this.session, required this.bank, this.theme});
 
   final SessionController session;
   final BankController bank;
+  final ThemeController? theme;
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +104,7 @@ class GodaFretApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider.value(value: session),
         ChangeNotifierProvider.value(value: bank),
-        ChangeNotifierProvider(create: (_) => ThemeController()),
+        if (theme != null) ChangeNotifierProvider.value(value: theme!) else ChangeNotifierProvider(create: (_) => ThemeController()),
       ],
       child: Consumer<ThemeController>(
         builder: (context, theme, _) => MaterialApp(

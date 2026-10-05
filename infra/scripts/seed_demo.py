@@ -82,6 +82,20 @@ class Api:
         return self.call("PUT", path, body)
 
 
+def random_fineract_password() -> str:
+    """Mot de passe conforme à la politique Fineract (12-50 caractères, majuscule,
+    minuscule, chiffre, caractère spécial, sans espace ni caractère répété)."""
+    import secrets
+    import string
+    alphabet = string.ascii_letters + string.digits
+    out = ["A", "b", "7", "#"]
+    while len(out) < 28:
+        c = secrets.choice(alphabet)
+        if c != out[-1]:
+            out.append(c)
+    return "".join(out)
+
+
 def day(offset: int) -> str:
     return (dt.date.today() + dt.timedelta(days=offset)).isoformat()
 
@@ -327,8 +341,7 @@ def main():
     lucas_cc = ensure_savings(api, lucas, current, 100)
 
     role = ensure_role(api)
-    import secrets
-    ensure_app_user(api, a.username, f"Fx-{secrets.token_urlsafe(18)}9a", role, "Camille", "Martin", "camille.martin@example.com")
+    ensure_app_user(api, a.username, random_fineract_password(), role, "Camille", "Martin", "camille.martin@example.com")
 
     if a.keycloak_url:
         if not a.keycloak_password:

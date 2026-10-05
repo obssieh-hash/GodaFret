@@ -1,0 +1,14 @@
+# Réseau local : HTTP sur le port 80, Mifos X et son API sur la même origine (pas de CORS).
+{
+	auto_https off
+}
+
+:80 {
+	encode gzip
+	handle /fineract-provider/* {
+		reverse_proxy fineract:8080
+	}
+	handle {
+		reverse_proxy mifos-web-app:80
+	}
+}

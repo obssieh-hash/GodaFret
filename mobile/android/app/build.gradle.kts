@@ -27,9 +27,16 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // HTTP non chiffré interdit par défaut. Pour un serveur du réseau local en HTTP :
+        //   flutter build apk --release --android-project-arg=allowCleartext=true
+        manifestPlaceholders["usesCleartextTraffic"] =
+            (project.findProperty("allowCleartext") as String?) ?: "false"
     }
 
     buildTypes {
+        debug {
+            manifestPlaceholders["usesCleartextTraffic"] = "true"
+        }
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.

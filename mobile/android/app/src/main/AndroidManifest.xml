@@ -4,6 +4,7 @@
     <application
         android:label="GodaFret Banque"
         android:allowBackup="false"
+        android:usesCleartextTraffic="${usesCleartextTraffic}"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
