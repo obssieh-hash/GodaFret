@@ -1,0 +1,122 @@
+# GodaFret Banque — Apache Fineract + Mifos X + PostgreSQL + Keycloak (MFA)
+# Usage : cp .env.example .env && nano .env && docker compose up -d
+name: godafret-banque
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:?définir dans .env}
+      FINERACT_DB_PASSWORD: ${FINERACT_DB_PASSWORD:?définir dans .env}
+      KEYCLOAK_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:?définir dans .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/01-init.sh:/docker-entrypoint-initdb.d/01-init.sh:ro
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [backend]
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.3
+    restart: unless-stopped
+    command: ["start", "--import-realm"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      KC_HOSTNAME: https://${AUTH_DOMAIN}
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+      KC_HEALTH_ENABLED: "true"
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?définir dans .env}
+    volumes:
+      - ./keycloak/godafret-realm.json:/opt/keycloak/data/import/godafret-realm.json:ro
+    ports:
+      # Console d'administration accessible uniquement depuis le serveur (tunnel SSH).
+      - "127.0.0.1:8081:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [backend]
+
+  fineract:
+    image: apache/fineract:latest
+    restart: unless-stopped
+    environment:
+      # Base de données
+      FINERACT_HIKARI_DRIVER_SOURCE_CLASS_NAME: org.postgresql.Driver
+      FINERACT_HIKARI_JDBC_URL: jdbc:postgresql://postgres:5432/fineract_tenants
+      FINERACT_HIKARI_USERNAME: fineract
+      FINERACT_HIKARI_PASSWORD: ${FINERACT_DB_PASSWORD}
+      FINERACT_DEFAULT_TENANTDB_HOSTNAME: postgres
+      FINERACT_DEFAULT_TENANTDB_PORT: "5432"
+      FINERACT_DEFAULT_TENANTDB_UID: fineract
+      FINERACT_DEFAULT_TENANTDB_PWD: ${FINERACT_DB_PASSWORD}
+      FINERACT_DEFAULT_TENANTDB_IDENTIFIER: ${FINERACT_TENANT:-default}
+      FINERACT_DEFAULT_TENANTDB_NAME: fineract_default
+      FINERACT_DEFAULT_TENANTDB_TIMEZONE: ${FINERACT_TIMEZONE:-Europe/Paris}
+      FINERACT_DEFAULT_TENANTDB_DESCRIPTION: GodaFret Banque
+      # TLS terminé par Caddy
+      FINERACT_SERVER_PORT: "8080"
+      FINERACT_SERVER_SSL_ENABLED: "false"
+      FINERACT_SECURITY_HSTS_ENABLED: "false"
+      # Authentification : Basic (back-office Mifos X) + jetons Keycloak (application mobile)
+      FINERACT_SECURITY_BASICAUTH_ENABLED: "true"
+      FINERACT_SECURITY_OIDC_FEDERATION_ENABLED: "true"
+      FINERACT_SECURITY_OIDC_PROVIDER: keycloak
+      FINERACT_SECURITY_OIDC_USERNAME_CLAIM: preferred_username
+      FINERACT_SECURITY_OIDC_AUTO_CREATE_USER: "false"
+      FINERACT_SECURITY_OIDCFEDERATION_ISSUERS_0_ISSUERURI: https://${AUTH_DOMAIN}/realms/godafret
+      FINERACT_SECURITY_OIDCFEDERATION_ISSUERS_0_TENANTID: ${FINERACT_TENANT:-default}
+      FINERACT_SECURITY_OIDCFEDERATION_ISSUERS_0_JWKSURI: http://keycloak:8080/realms/godafret/protocol/openid-connect/certs
+      # CORS : uniquement le back-office
+      FINERACT_SECURITY_CORS_ALLOWED_ORIGIN_PATTERNS: https://${ADMIN_DOMAIN}
+      FINERACT_MANAGEMENT_ENDPOINT_WEB_EXPOSURE_INCLUDE: health
+      JAVA_TOOL_OPTIONS: "-Xmx2G -XX:+UseContainerSupport"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [backend]
+
+  mifos-web-app:
+    image: openmf/web-app:master
+    restart: unless-stopped
+    environment:
+      FINERACT_API_URLS: https://${ADMIN_DOMAIN}
+      FINERACT_API_URL: https://${ADMIN_DOMAIN}
+      FINERACT_PLATFORM_TENANT_IDENTIFIER: ${FINERACT_TENANT:-default}
+      MIFOS_DEFAULT_LANGUAGE: fr-FR
+    networks: [backend]
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      BANK_API_DOMAIN: ${BANK_API_DOMAIN}
+      ADMIN_DOMAIN: ${ADMIN_DOMAIN}
+      AUTH_DOMAIN: ${AUTH_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [fineract, keycloak, mifos-web-app]
+    networks: [backend]
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
+
+networks:
+  backend:

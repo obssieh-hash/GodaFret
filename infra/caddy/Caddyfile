@@ -1,0 +1,39 @@
+# Reverse proxy HTTPS (certificats Let's Encrypt automatiques).
+{
+	email {$ACME_EMAIL}
+}
+
+# API Fineract utilisée par l'application mobile
+{$BANK_API_DOMAIN} {
+	encode gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		-Server
+	}
+	reverse_proxy fineract:8080
+}
+
+# Console Mifos X (back-office) — à restreindre au réseau de l'agence
+{$ADMIN_DOMAIN} {
+	encode gzip
+	# Exemple de restriction par IP :
+	# @outside not remote_ip 203.0.113.0/24
+	# respond @outside 403
+	handle /fineract-provider/* {
+		reverse_proxy fineract:8080
+	}
+	handle {
+		reverse_proxy mifos-web-app:80
+	}
+}
+
+# Keycloak (connexion, MFA, console de sécurité des clients)
+{$AUTH_DOMAIN} {
+	encode gzip
+	# La console d'administration Keycloak n'est pas exposée publiquement :
+	# utilisez un tunnel SSH (ssh -L 8081:localhost:8081 serveur) puis http://localhost:8081/admin
+	@admin path /admin*
+	respond @admin 404
+	reverse_proxy keycloak:8080
+}
