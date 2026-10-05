@@ -9,7 +9,7 @@ from typing import Callable
 import numpy as np
 import pandas as pd
 
-from .analytics import allocation, dcf, dividends, earnings, risk, screener, technical
+from .analytics import advisor, allocation, dcf, dividends, earnings, risk, screener, technical
 from .analytics import indicators as ind
 from .analytics.fundamentals import Fundamentals, compute, dividend_safety
 from .config import LIMITS, RiskLimits, api_key
@@ -285,3 +285,30 @@ def dividend_universe(tickers: list[str], account: str,
     if account == "PEA" and "Éligible PEA" in df:
         df = df[df["Éligible PEA"]]
     return df
+
+
+# ------------------------------------------------------------------ 0. conseiller
+def market_signal() -> tuple[bool | None, float | None, str]:
+    """Cours de l'indice monde vs sa moyenne 200 jours, et VIX (FRED)."""
+    above, vix, txt = None, None, ""
+    try:
+        df, _ = provider.ohlcv("VT", "2y")
+        if len(df) > 200:
+            ma = df["Close"].rolling(200).mean().iloc[-1]
+            above = bool(df["Close"].iloc[-1] > ma)
+            txt = f"Actions monde {'au-dessus' if above else 'en dessous'} de leur moyenne 200 jours"
+    except Exception:
+        pass
+    try:
+        v = macro.fred_series("VIXCLS", (pd.Timestamp.today() - pd.Timedelta(days=20)).strftime("%Y-%m-%d"))
+        if not v.empty:
+            vix = float(v.iloc[-1])
+            txt += f" · VIX {vix:.0f}"
+    except Exception:
+        pass
+    return above, vix, txt
+
+
+def advisor_plan(s: advisor.Situation) -> tuple[advisor.Plan, str]:
+    above, vix, txt = market_signal()
+    return advisor.build_plan(s, above, vix), txt

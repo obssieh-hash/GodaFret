@@ -4,7 +4,8 @@ import streamlit as st
 st.set_page_config(page_title="GodaFret", page_icon="📈", layout="wide")
 
 PAGES = [
-    st.Page("views/accueil.py", title="Accueil", icon="🏦", default=True),
+    st.Page("views/conseiller.py", title="Mon conseiller", icon="🧭", default=True),
+    st.Page("views/accueil.py", title="Outils et API", icon="🏦"),
     st.Page("views/selection_actions.py", title="01 · Sélection d'actions", icon="🎯"),
     st.Page("views/valorisation_dcf.py", title="02 · Valorisation DCF", icon="🧮"),
     st.Page("views/gestion_du_risque.py", title="03 · Gestion du risque", icon="🛡️"),

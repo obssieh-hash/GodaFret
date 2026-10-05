@@ -7,6 +7,7 @@ from streamlit.testing.v1 import AppTest
 ROOT = Path(__file__).resolve().parent.parent
 
 PAGES = {
+    "views/conseiller.py": "button",
     "views/accueil.py": None,
     "views/selection_actions.py": "custom",
     "views/valorisation_dcf.py": "button",
