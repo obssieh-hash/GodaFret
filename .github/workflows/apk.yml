@@ -1,0 +1,86 @@
+# Construit l'APK Android de GodaFret Banque et le publie en téléchargement
+# (onglet « Releases » du dépôt) à chaque modification de l'application.
+name: APK Android
+
+on:
+  push:
+    paths:
+      - "mobile/**"
+      - ".github/workflows/apk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.6
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+      # Clé de signature stable (facultative) : secrets ANDROID_KEYSTORE_BASE64,
+      # ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD.
+      - name: Clé de signature
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > android/app/upload.jks
+            printf 'storeFile=upload.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
+              "$STORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > android/key.properties
+            echo "Signature avec la clé du dépôt."
+          else
+            echo "Pas de clé configurée : signature de test (désinstaller avant chaque mise à jour)."
+          fi
+
+      # allowCleartext : autorise le HTTP vers un serveur du réseau local (install-local.sh).
+      - name: Construire l'APK
+        run: |
+          flutter build apk --release --android-project-arg=allowCleartext=true
+          cp build/app/outputs/flutter-apk/app-release.apk ../godafret-banque.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: godafret-banque-apk
+          path: godafret-banque.apk
+
+      - name: Publier en téléchargement
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          name: GodaFret Banque — APK ${{ github.run_number }}
+          make_latest: true
+          files: godafret-banque.apk
+          body: |
+            Application Android **GodaFret Banque** (commit ${{ github.sha }}).
+
+            1. Téléchargez **godafret-banque.apk** ci-dessous depuis le téléphone.
+            2. Ouvrez-le et autorisez l'installation depuis cette source.
+            3. Dans l'application : ⚙️ → **Démo** (sans serveur, code OTP 123456)
+               ou **Mon serveur** → adresse IP de votre serveur Ubuntu.
