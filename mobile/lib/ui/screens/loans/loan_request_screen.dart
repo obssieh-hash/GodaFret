@@ -39,6 +39,9 @@ class _LoanRequestScreenState extends State<LoanRequestScreen> {
   }
 
   double get _min => _product?.minPrincipal ?? 100;
+
+  /// Pas du curseur de montant : 5 000 Fdj (ou 100 pour une devise à centimes).
+  double get _step => Fmt.decimals(_product?.currency ?? 'DJF') == 0 ? 5000 : 100;
   double get _max => _product?.maxPrincipal ?? 50000;
   int get _minMonths => _product?.minRepayments ?? 1;
   int get _maxMonths => _product?.maxRepayments ?? 120;
@@ -142,8 +145,8 @@ class _LoanRequestScreenState extends State<LoanRequestScreen> {
                         value: _amount,
                         min: _min,
                         max: _max,
-                        divisions: ((_max - _min) / 100).round().clamp(1, 1000),
-                        onChanged: (v) => setState(() => _amount = (v / 100).round() * 100.0),
+                        divisions: ((_max - _min) / _step).round().clamp(1, 1000),
+                        onChanged: (v) => setState(() => _amount = ((v / _step).round() * _step).clamp(_min, _max).toDouble()),
                         onChangeEnd: (_) => _simulate(),
                       ),
                       _Bounds(Fmt.money(_min, currency: p.currency), Fmt.money(_max, currency: p.currency)),

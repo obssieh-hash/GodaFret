@@ -1,40 +1,54 @@
 import 'package:flutter/material.dart';
 
-/// Palette et thème de GodaFret Banque.
+/// Palette et thème Golden Bridge (bleu nuit + or).
 class AppColors {
-  static const indigo = Color(0xFF4F46E5);
-  static const violet = Color(0xFF7C3AED);
-  static const night = Color(0xFF0F1222);
-  static const nightSoft = Color(0xFF171B33);
-  static const teal = Color(0xFF14B8A6);
+  // Identité Golden Bridge : bleu nuit + or.
+  static const navy = Color(0xFF0A1F44);
+  static const navyLight = Color(0xFF173A7A);
+  static const gold = Color(0xFFF5B70A);
+  static const goldDark = Color(0xFFC98A00);
+  static const goldSoft = Color(0xFFFFF4D1);
+
+  // Couleurs fonctionnelles (noms historiques conservés).
+  static const indigo = navyLight;
+  static const violet = Color(0xFF2563EB);
+  static const night = Color(0xFF071630);
+  static const nightSoft = Color(0xFF10234A);
+  static const teal = Color(0xFF0E9F6E);
   static const green = Color(0xFF16A34A);
-  static const red = Color(0xFFE11D48);
-  static const amber = Color(0xFFF59E0B);
-  static const sky = Color(0xFF0EA5E9);
-  static const background = Color(0xFFF4F5FB);
+  static const red = Color(0xFFDC2626);
+  static const amber = Color(0xFFE09B00);
+  static const sky = Color(0xFF0284C7);
+  static const background = Color(0xFFF5F6FA);
 
   static const primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF312E81), indigo, violet],
+    colors: [navyLight, navy],
   );
 
   static const nightGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFF1E1B4B), night],
+    colors: [Color(0xFF0F2A5C), night],
+  );
+
+  static const goldGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFFFFCC33), gold, goldDark],
   );
 
   static const tealGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF0F766E), teal],
+    colors: [Color(0xFF047857), teal],
   );
 
   static const sunsetGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFBE185D), Color(0xFFF97316)],
+    colors: [Color(0xFF2563EB), navyLight],
   );
 }
 
@@ -45,16 +59,17 @@ class AppTheme {
   static ThemeData _build(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
     final scheme = ColorScheme.fromSeed(
-      seedColor: AppColors.indigo,
+      seedColor: AppColors.navy,
       brightness: brightness,
-      primary: isDark ? const Color(0xFF8B85FF) : AppColors.indigo,
-      secondary: AppColors.teal,
+      primary: isDark ? AppColors.gold : AppColors.navyLight,
+      secondary: AppColors.gold,
       error: AppColors.red,
       surface: isDark ? AppColors.nightSoft : Colors.white,
     );
     final radius = BorderRadius.circular(18);
     return ThemeData(
       useMaterial3: true,
+      fontFamily: 'Poppins',
       colorScheme: scheme,
       brightness: brightness,
       scaffoldBackgroundColor: isDark ? AppColors.night : AppColors.background,
@@ -80,7 +95,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: isDark ? const Color(0xFF20243F) : const Color(0xFFF0F1F8),
+        fillColor: isDark ? const Color(0xFF18305E) : const Color(0xFFEFF1F6),
         contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         border: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide.none),
         enabledBorder: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide.none),
@@ -95,6 +110,10 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
+          backgroundColor: AppColors.gold,
+          foregroundColor: AppColors.navy,
+          disabledBackgroundColor: isDark ? Colors.white12 : const Color(0xFFE6E8EF),
+          disabledForegroundColor: isDark ? Colors.white38 : const Color(0xFF9AA1B2),
           minimumSize: const Size.fromHeight(56),
           shape: RoundedRectangleBorder(borderRadius: radius),
           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),

@@ -148,7 +148,7 @@ class MoneyText extends StatelessWidget {
   const MoneyText(
     this.amount, {
     super.key,
-    this.currency = 'EUR',
+    this.currency = 'DJF',
     this.style,
     this.hidden = false,
     this.signed = false,
@@ -311,7 +311,7 @@ class PrimaryButton extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (icon != null) ...[Icon(icon, size: 20), const SizedBox(width: 8)],
-                    Text(label),
+                    Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
                   ],
                 ),
         ),
@@ -347,26 +347,32 @@ class KeyValueRow extends StatelessWidget {
 
 /// Champ de saisie d'un montant, en grand.
 class AmountField extends StatelessWidget {
-  const AmountField({super.key, required this.controller, this.currency = 'EUR', this.validator, this.autofocus = false});
+  const AmountField({super.key, required this.controller, this.currency = 'DJF', this.validator, this.autofocus = false});
 
   final TextEditingController controller;
   final String currency;
   final String? Function(String?)? validator;
   final bool autofocus;
 
-  static double? parse(String? text) => double.tryParse((text ?? '').replaceAll(' ', '').replaceAll(',', '.'));
+  /// Texte à pré-remplir pour un montant (sans décimales pour le franc Djibouti).
+  static String text(double value, String currency) =>
+      Fmt.decimals(currency) == 0 ? '${value.ceil()}' : value.toStringAsFixed(2).replaceAll('.', ',');
+
+  static double? parse(String? text) =>
+      double.tryParse((text ?? '').replaceAll(RegExp(r'[\s\u00a0\u202f]'), '').replaceAll(',', '.'));
 
   @override
   Widget build(BuildContext context) {
-    final symbol = Fmt.money(0, currency: currency).replaceAll(RegExp(r'[\d,.\s  ]'), '');
+    final symbol = Fmt.symbol(currency);
+    final noDecimals = Fmt.decimals(currency) == 0;
     return TextFormField(
       controller: controller,
       autofocus: autofocus,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      keyboardType: TextInputType.numberWithOptions(decimal: !noDecimals),
       textAlign: TextAlign.center,
       style: const TextStyle(fontSize: 38, fontWeight: FontWeight.w800, letterSpacing: -1),
       decoration: InputDecoration(
-        hintText: '0,00',
+        hintText: noDecimals ? '0' : '0,00',
         suffixText: symbol,
         suffixStyle: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700),
         contentPadding: const EdgeInsets.symmetric(vertical: 22, horizontal: 18),

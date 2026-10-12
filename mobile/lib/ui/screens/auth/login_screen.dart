@@ -5,6 +5,8 @@ import '../../../config/app_config.dart';
 import '../../../core/theme.dart';
 import '../../../state/session_controller.dart';
 import '../../widgets/common.dart';
+import '../../../core/brand.dart';
+import '../../widgets/brand.dart';
 import 'auth_scaffold.dart';
 import 'server_sheet.dart';
 
@@ -31,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void _submit() {
     FocusScope.of(context).unfocus();
     if (!_form.currentState!.validate()) return;
-    context.read<SessionController>().login(_user.text, _pass.text);
+    context.read<SessionController>().login(_user.text.replaceAll(' ', ''), _pass.text);
   }
 
   @override
@@ -54,18 +56,14 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Center(child: BrandLogo(size: 76)),
-                  const SizedBox(height: 26),
+                  const Center(child: BrandLogo(size: 84)),
+                  const SizedBox(height: 28),
+                  const Center(child: BrandWordmark(onDark: true, size: 26)),
+                  const SizedBox(height: 10),
                   const Text(
-                    'Bienvenue',
+                    'Envoyez, payez, recevez. Simplement.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: -0.8),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Votre banque, simple et sécurisée.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white60, fontSize: 15),
+                    style: TextStyle(color: Colors.white60, fontSize: 14.5),
                   ),
                   const SizedBox(height: 14),
                   Center(child: _ModeChip(config)),
@@ -74,9 +72,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _user,
                     style: const TextStyle(color: Colors.white),
                     textInputAction: TextInputAction.next,
-                    autofillHints: const [AutofillHints.username],
-                    decoration: darkField('Identifiant', Icons.person_outline_rounded),
-                    validator: (v) => (v ?? '').trim().isEmpty ? 'Saisissez votre identifiant' : null,
+                    keyboardType: TextInputType.phone,
+                    autofillHints: const [AutofillHints.telephoneNumber, AutofillHints.username],
+                    decoration: darkField('Numéro de téléphone', Icons.phone_iphone_rounded).copyWith(
+                      prefixText: '${Brand.phonePrefix}  ',
+                      prefixStyle: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600),
+                      hintText: '77 00 00 00',
+                      hintStyle: const TextStyle(color: Colors.white30),
+                    ),
+                    validator: (v) => (v ?? '').trim().isEmpty ? 'Saisissez votre numéro de téléphone' : null,
                   ),
                   const SizedBox(height: 14),
                   TextFormField(
@@ -166,7 +170,7 @@ class _SecurityNote extends StatelessWidget {
           SizedBox(width: 6),
           Flexible(
             child: Text(
-              'Connexion chiffrée · authentification forte',
+              'Golden Bridge Bank · connexion sécurisée',
               style: TextStyle(color: Colors.white38, fontSize: 12.5),
             ),
           ),

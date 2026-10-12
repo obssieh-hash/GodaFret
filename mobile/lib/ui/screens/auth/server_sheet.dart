@@ -5,7 +5,7 @@ import '../../../core/theme.dart';
 import '../../../main.dart';
 import '../../widgets/common.dart';
 
-/// Choix du serveur : mode démo ou serveur GodaFret (adresse IP du réseau local
+/// Choix du serveur : mode démo ou serveur Golden Bridge (adresse IP du réseau local
 /// ou nom de domaine). Les URL Keycloak / Fineract sont déduites et modifiables.
 Future<void> showServerSheet(BuildContext context, AppConfig current) {
   return showModalBottomSheet<void>(

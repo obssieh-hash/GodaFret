@@ -7,12 +7,12 @@ library;
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:godafret_bank/config/app_config.dart';
-import 'package:godafret_bank/models/models.dart';
-import 'package:godafret_bank/services/api_client.dart';
-import 'package:godafret_bank/services/auth/keycloak_auth.dart';
-import 'package:godafret_bank/services/fineract_repository.dart';
-import 'package:godafret_bank/services/secure_store.dart';
+import 'package:golden_bridge_pay/config/app_config.dart';
+import 'package:golden_bridge_pay/models/models.dart';
+import 'package:golden_bridge_pay/services/api_client.dart';
+import 'package:golden_bridge_pay/services/auth/keycloak_auth.dart';
+import 'package:golden_bridge_pay/services/fineract_repository.dart';
+import 'package:golden_bridge_pay/services/secure_store.dart';
 
 class MemoryStore extends SecureStore {
   final _data = <String, String>{};
@@ -34,10 +34,10 @@ void main() {
     fineractUrl: env['FINERACT_URL'] ?? 'http://localhost:8082/fineract-provider/api/v1',
     tenant: 'default',
     keycloakUrl: env['KEYCLOAK_URL'] ?? 'http://localhost:8081',
-    keycloakRealm: 'godafret',
-    keycloakClientId: 'godafret-mobile',
+    keycloakRealm: 'goldenbridge',
+    keycloakClientId: 'gbpay-mobile',
     mfaRequired: false,
-    currency: 'EUR',
+    currency: 'DJF',
     lockAfter: const Duration(seconds: 60),
   );
 
@@ -47,51 +47,56 @@ void main() {
   setUpAll(() async {
     if (!enabled) return;
     auth = KeycloakAuthService(config, MemoryStore());
-    await auth.login(env['LIVE_USER'] ?? 'camille', env['LIVE_PASSWORD'] ?? 'Demo-Banque-2026');
+    await auth.login(env['LIVE_USER'] ?? '77101010', env['LIVE_PASSWORD'] ?? 'Demo-Banque-2026');
     repo = FineractRepository(FineractApi(config, authHeaders: auth.authHeaders), auth);
   });
 
   test('parcours complet sur Fineract', () async {
     final client = await repo.loadClient();
-    expect(client.displayName, 'Camille Martin');
+    expect(client.displayName, 'Fatouma Ali Houssein');
 
     final accounts = await repo.accounts();
     expect(accounts.savings.length, greaterThanOrEqualTo(2));
-    final current = accounts.savings.firstWhere((a) => a.productName == 'Compte courant');
-    final livret = accounts.savings.firstWhere((a) => a.productName != 'Compte courant');
+    final wallet = accounts.savings.firstWhere((a) => a.productName == 'Portefeuille GB Pay');
+    final epargne = accounts.savings.firstWhere((a) => a.id != wallet.id);
+    expect(wallet.currency, 'DJF');
+    final before = (await repo.savingsDetail(wallet.id)).account.balance;
 
-    final before = (await repo.savingsDetail(current.id)).account.balance;
-    final types = await repo.paymentTypes();
-    await repo.deposit(current.id, 100, paymentTypeId: types.firstOrNull?.id, note: 'Test dépôt');
-    await repo.withdraw(current.id, 40, paymentTypeId: types.firstOrNull?.id);
-    final detail = await repo.savingsDetail(current.id);
-    expect(detail.account.balance, closeTo(before + 60, 0.001));
-    expect(detail.transactions.first.amount, -40);
+    // Envoyer à un numéro de téléphone, payer un marchand, retirer chez un agent.
+    final ahmed = await repo.findRecipient('+253 77 20 20 20');
+    expect(ahmed.clientName, contains('Ahmed'));
+    await repo.transfer(from: wallet, to: ahmed, amount: 2500, description: 'Envoi test');
+    final shop = await repo.findRecipient('21350001');
+    expect(shop.clientName, contains('Boulangerie'));
+    await repo.transfer(from: wallet, to: shop, amount: 1500, description: 'Paiement test');
+    final agent = await repo.findRecipient('77990001');
+    expect(agent.clientName, contains('Agent'));
+    await repo.transfer(from: wallet, to: agent, amount: 5000, description: 'Retrait test');
+    // Vers mon épargne par numéro de compte.
+    final own = await repo.findRecipient(epargne.accountNo);
+    await repo.transfer(from: wallet, to: own, amount: 1000, description: 'Épargne');
+    final detail = await repo.savingsDetail(wallet.id);
+    expect(detail.account.balance, closeTo(before - 10000, 0.001));
+    expect(() => repo.findRecipient('77000000'), throwsA(isA<ApiException>()));
 
-    // Transfert vers mon livret puis vers un autre client.
-    final own = await repo.findBeneficiary(livret.accountNo);
-    await repo.transfer(from: current, to: own, amount: 10, description: 'Vers livret');
-    final lucas = await repo.findBeneficiary(env['LIVE_BENEFICIARY'] ?? '000000003');
-    expect(lucas.clientName, contains('Lucas'));
-    await repo.transfer(from: current, to: lucas, amount: 5, description: 'Remboursement resto');
-    expect((await repo.savingsDetail(current.id)).account.balance, closeTo(before + 45, 0.001));
-
-    // Prêts : échéancier, simulation, demande, remboursement.
+    // Prêts : échéancier, simulation, demande, remboursement depuis le portefeuille.
     final active = accounts.loans.firstWhere((l) => l.state == LoanState.active);
     final loan = await repo.loanDetail(active.id);
     expect(loan.schedule, isNotEmpty);
     final products = await repo.loanProducts();
     expect(products, isNotEmpty);
     final p = products.first;
-    final sim = await repo.simulateLoan(p, 2000, 12);
+    final sim = await repo.simulateLoan(p, 200000, 12);
     expect(sim.installments, hasLength(12));
-    expect(sim.totalRepayment, greaterThan(2000));
-    await repo.applyForLoan(p, 2000, 12, purpose: 'Test intégration');
+    expect(sim.totalRepayment, greaterThan(200000));
+    await repo.applyForLoan(p, 200000, 12, purpose: 'Test intégration');
     expect((await repo.accounts()).loans.where((l) => l.state == LoanState.pending), isNotEmpty);
 
-    await repo.repayLoan(active.id, 50);
+    final w = (await repo.savingsDetail(wallet.id)).account;
+    await repo.repayLoan(active.id, 5000, from: w);
     final after = await repo.loanDetail(active.id);
-    expect(after.outstanding, closeTo(loan.outstanding - 50, 0.01));
+    expect(after.outstanding, closeTo(loan.outstanding - 5000, 0.01));
+    expect((await repo.savingsDetail(wallet.id)).account.balance, closeTo(w.balance - 5000, 0.001));
 
     final notifications = await repo.notifications();
     expect(notifications, isA<List<AppNotification>>());

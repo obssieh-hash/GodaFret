@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import 'config/app_config.dart';
+import 'core/brand.dart';
 import 'core/theme.dart';
 import 'services/api_client.dart';
 import 'services/auth/auth_service.dart';
@@ -87,12 +88,12 @@ class AppRootState extends State<AppRoot> {
     if (session == null || bank == null) {
       return const MaterialApp(debugShowCheckedModeBanner: false, home: AuthScaffold(child: Center(child: BrandLogo(size: 84))));
     }
-    return GodaFretApp(key: ValueKey(_generation), session: session, bank: bank, theme: theme);
+    return GoldenBridgeApp(key: ValueKey(_generation), session: session, bank: bank, theme: theme);
   }
 }
 
-class GodaFretApp extends StatelessWidget {
-  const GodaFretApp({super.key, required this.session, required this.bank, this.theme});
+class GoldenBridgeApp extends StatelessWidget {
+  const GoldenBridgeApp({super.key, required this.session, required this.bank, this.theme});
 
   final SessionController session;
   final BankController bank;
@@ -108,7 +109,7 @@ class GodaFretApp extends StatelessWidget {
       ],
       child: Consumer<ThemeController>(
         builder: (context, theme, _) => MaterialApp(
-          title: 'GodaFret Banque',
+          title: Brand.app,
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),

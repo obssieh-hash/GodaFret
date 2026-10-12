@@ -1,11 +1,11 @@
 {
-    "name": "godafret_bank",
-    "short_name": "godafret_bank",
+    "name": "Golden Bridge Pay",
+    "short_name": "GB Pay",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0A1F44",
+    "theme_color": "#0A1F44",
+    "description": "Portefeuille mobile Golden Bridge Bank",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

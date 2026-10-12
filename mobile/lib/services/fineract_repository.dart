@@ -1,3 +1,4 @@
+import '../core/brand.dart';
 import '../core/formatters.dart';
 import '../models/models.dart';
 import 'api_client.dart';
@@ -18,6 +19,7 @@ class FineractRepository implements BankRepository {
   Client? _client;
 
   static const _savingsType = 2;
+  static const _loanType = 1;
 
   Map<String, dynamic> get _fmt => {'locale': 'en', 'dateFormat': 'yyyy-MM-dd'};
 
@@ -89,57 +91,47 @@ class FineractRepository implements BankRepository {
   }
 
   @override
-  Future<List<PaymentType>> paymentTypes() async {
-    try {
-      final data = await api.get('/paymenttypes') as List;
-      return data.cast<Map>().map((p) => PaymentType(p['id'] as int, '${p['name']}')).toList();
-    } on ApiException {
-      return const [];
+  Future<Beneficiary> findRecipient(String query) async {
+    final q = query.trim();
+    final digits = normalizePhone(q);
+
+    // 1. Numéro de compte exact.
+    final accounts = await api.get('/search', query: {'query': q, 'resource': 'savings', 'exactMatch': true}) as List;
+    final byAccount = accounts.cast<Map>().where((r) => '${r['entityAccountNo']}' == q).toList();
+    if (byAccount.isNotEmpty) {
+      final r = byAccount.first;
+      return _beneficiaryForAccount(r['entityId'] as int, fallbackName: r['parentName'] as String?);
     }
+
+    // 2. Numéro de téléphone du client (Fineract cherche aussi dans mobile_no).
+    if (digits.length >= 6) {
+      final clients = await api.get('/search', query: {'query': digits, 'resource': 'clients'}) as List;
+      for (final c in clients.cast<Map>()) {
+        if (normalizePhone('${c['entityMobileNo'] ?? ''}') != digits) continue;
+        final clientId = c['entityId'] as int;
+        final acc = await api.get('/clients/$clientId/accounts') as Map;
+        final savings = ((acc['savingsAccounts'] as List?) ?? const [])
+            .cast<Map>()
+            .where((s) => (s['status'] as Map?)?['active'] == true)
+            .toList();
+        if (savings.isEmpty) break;
+        return _beneficiaryForAccount(savings.first['id'] as int);
+      }
+    }
+    throw ApiException('Aucun compte Golden Bridge ne correspond à « $q ».');
   }
 
-  @override
-  Future<void> deposit(int accountId, double amount, {int? paymentTypeId, String? note}) =>
-      _savingsTx(accountId, 'deposit', amount, paymentTypeId, note);
-
-  @override
-  Future<void> withdraw(int accountId, double amount, {int? paymentTypeId, String? note}) =>
-      _savingsTx(accountId, 'withdrawal', amount, paymentTypeId, note);
-
-  Future<void> _savingsTx(int accountId, String command, double amount, int? paymentTypeId, String? note) async {
-    await api.post(
-      '/savingsaccounts/$accountId/transactions',
-      query: {'command': command},
-      body: {
-        ..._fmt,
-        'transactionDate': Fmt.api(DateTime.now()),
-        'transactionAmount': amount,
-        'paymentTypeId': ?paymentTypeId,
-        if (note != null && note.isNotEmpty) 'note': note,
-      },
-    );
-  }
-
-  @override
-  Future<Beneficiary> findBeneficiary(String accountNo) async {
-    final results = await api.get('/search', query: {
-      'query': accountNo.trim(),
-      'resource': 'savings',
-      'exactMatch': true,
-    }) as List;
-    final match = results.cast<Map>().where((r) => '${r['entityAccountNo']}' == accountNo.trim()).toList();
-    if (match.isEmpty) throw ApiException('Aucun compte ne correspond à ce numéro.');
-    final r = match.first;
-    final accountId = r['entityId'] as int;
+  Future<Beneficiary> _beneficiaryForAccount(int accountId, {String? fallbackName}) async {
     final account = await api.get('/savingsaccounts/$accountId') as Map;
-    final clientId = (account['clientId'] ?? r['parentId']) as int;
+    final clientId = account['clientId'] as int;
     final client = await api.get('/clients/$clientId') as Map;
     return Beneficiary(
       accountId: accountId,
-      accountNo: '${r['entityAccountNo']}',
+      accountNo: '${account['accountNo']}',
       clientId: clientId,
-      clientName: '${account['clientName'] ?? r['parentName'] ?? client['displayName']}',
+      clientName: '${client['displayName'] ?? account['clientName'] ?? fallbackName}',
       officeId: client['officeId'] as int,
+      phone: client['mobileNo'] as String?,
     );
   }
 
@@ -163,7 +155,7 @@ class FineractRepository implements BankRepository {
       'toAccountId': to.accountId,
       'transferAmount': amount,
       'transferDate': Fmt.api(DateTime.now()),
-      'transferDescription': description.isEmpty ? 'Transfert mobile' : description,
+      'transferDescription': description.isEmpty ? 'Transfert ${Brand.short}' : description,
     });
   }
 
@@ -248,18 +240,22 @@ class FineractRepository implements BankRepository {
   }
 
   @override
-  Future<void> repayLoan(int loanId, double amount, {int? paymentTypeId}) async {
-    await api.post(
-      '/loans/$loanId/transactions',
-      query: {'command': 'repayment'},
-      body: {
-        ..._fmt,
-        'transactionDate': Fmt.api(DateTime.now()),
-        'transactionAmount': amount,
-        'paymentTypeId': ?paymentTypeId,
-        'note': 'Remboursement via application mobile',
-      },
-    );
+  Future<void> repayLoan(int loanId, double amount, {required SavingsAccount from}) async {
+    final client = _client!;
+    await api.post('/accounttransfers', body: {
+      ..._fmt,
+      'fromOfficeId': client.officeId,
+      'fromClientId': client.id,
+      'fromAccountType': _savingsType,
+      'fromAccountId': from.id,
+      'toOfficeId': client.officeId,
+      'toClientId': client.id,
+      'toAccountType': _loanType,
+      'toAccountId': loanId,
+      'transferAmount': amount,
+      'transferDate': Fmt.api(DateTime.now()),
+      'transferDescription': 'Remboursement de prêt ${Brand.short}',
+    });
   }
 
   @override

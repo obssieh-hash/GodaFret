@@ -21,20 +21,23 @@ class _RepaymentScreenState extends State<RepaymentScreen> {
   final _form = GlobalKey<FormState>();
   final _amount = TextEditingController();
   LoanAccount? _loan;
+  SavingsAccount? _from;
   bool _sending = false;
   String? _error;
 
   @override
   void initState() {
     super.initState();
-    final loans = context.read<BankController>().activeLoans;
+    final bank = context.read<BankController>();
+    final loans = bank.activeLoans;
+    _from = bank.savings.firstOrNull;
     _choose(loans.where((l) => l.id == widget.loanId).firstOrNull ?? loans.firstOrNull);
   }
 
   void _choose(LoanAccount? loan) {
     _loan = loan;
     final next = loan?.nextInstallment;
-    if (next != null) _amount.text = next.outstanding.toStringAsFixed(2).replaceAll('.', ',');
+    if (next != null) _amount.text = AmountField.text(next.outstanding, loan!.currency);
   }
 
   @override
@@ -45,7 +48,7 @@ class _RepaymentScreenState extends State<RepaymentScreen> {
 
   Future<void> _submit() async {
     final loan = _loan;
-    if (loan == null || !_form.currentState!.validate()) return;
+    if (loan == null || _from == null || !_form.currentState!.validate()) return;
     final amount = AmountField.parse(_amount.text)!;
     final ok = await confirmWithPin(
       context,
@@ -58,7 +61,7 @@ class _RepaymentScreenState extends State<RepaymentScreen> {
       _error = null;
     });
     try {
-      await context.read<BankController>().perform((repo) => repo.repayLoan(loan.id, amount));
+      await context.read<BankController>().perform((repo) => repo.repayLoan(loan.id, amount, from: _from!));
       if (!mounted) return;
       await SuccessScreen.show(
         context,
@@ -151,18 +154,18 @@ class _RepaymentScreenState extends State<RepaymentScreen> {
                   ActionChip(
                     avatar: const Icon(Icons.event_rounded, size: 18),
                     label: const Text('Échéance'),
-                    onPressed: () => _amount.text = next.outstanding.toStringAsFixed(2).replaceAll('.', ','),
+                    onPressed: () => _amount.text = AmountField.text(next.outstanding, loan.currency),
                   ),
                 if (loan.overdue > 0)
                   ActionChip(
                     avatar: const Icon(Icons.warning_amber_rounded, size: 18),
                     label: const Text('Impayés'),
-                    onPressed: () => _amount.text = loan.overdue.toStringAsFixed(2).replaceAll('.', ','),
+                    onPressed: () => _amount.text = AmountField.text(loan.overdue, loan.currency),
                   ),
                 ActionChip(
                   avatar: const Icon(Icons.done_all_rounded, size: 18),
                   label: const Text('Solder le prêt'),
-                  onPressed: () => _amount.text = loan.outstanding.toStringAsFixed(2).replaceAll('.', ','),
+                  onPressed: () => _amount.text = AmountField.text(loan.outstanding, loan.currency),
                 ),
               ],
             ),

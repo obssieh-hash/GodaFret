@@ -1,4 +1,4 @@
-package com.godafret.godafret_bank
+package com.goldenbridge.pay
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

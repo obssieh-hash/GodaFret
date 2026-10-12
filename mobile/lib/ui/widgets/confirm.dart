@@ -175,8 +175,15 @@ class _SuccessScreenState extends State<SuccessScreen> with SingleTickerProvider
                             padding: const EdgeInsets.symmetric(vertical: 6),
                             child: Row(
                               children: [
-                                Expanded(child: Text(k, style: const TextStyle(color: Colors.white60))),
-                                Text(v, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                                Text(k, style: const TextStyle(color: Colors.white60)),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    v,
+                                    textAlign: TextAlign.end,
+                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                                  ),
+                                ),
                               ],
                             ),
                           ),

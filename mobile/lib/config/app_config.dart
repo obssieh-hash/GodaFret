@@ -6,7 +6,7 @@
 ///   --dart-define=AUTH_MODE=keycloak \
 ///   --dart-define=FINERACT_URL=https://banque.example.com/fineract-provider/api/v1 \
 ///   --dart-define=KEYCLOAK_URL=https://auth.example.com \
-///   --dart-define=KEYCLOAK_REALM=godafret
+///   --dart-define=KEYCLOAK_REALM=goldenbridge
 /// ```
 library;
 
@@ -52,13 +52,13 @@ class AppConfig {
         'KEYCLOAK_URL',
         defaultValue: 'http://localhost:8081',
       ),
-      keycloakRealm: const String.fromEnvironment('KEYCLOAK_REALM', defaultValue: 'godafret'),
+      keycloakRealm: const String.fromEnvironment('KEYCLOAK_REALM', defaultValue: 'goldenbridge'),
       keycloakClientId: const String.fromEnvironment(
         'KEYCLOAK_CLIENT_ID',
-        defaultValue: 'godafret-mobile',
+        defaultValue: 'gbpay-mobile',
       ),
       mfaRequired: const bool.fromEnvironment('MFA_REQUIRED', defaultValue: true),
-      currency: const String.fromEnvironment('CURRENCY', defaultValue: 'EUR'),
+      currency: const String.fromEnvironment('CURRENCY', defaultValue: 'DJF'),
       lockAfter: const Duration(
         seconds: int.fromEnvironment('LOCK_AFTER_SECONDS', defaultValue: 60),
       ),

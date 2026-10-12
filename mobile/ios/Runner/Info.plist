@@ -9,7 +9,7 @@
 	<key>NSFaceIDUsageDescription</key>
 	<string>Face ID permet de déverrouiller l'application et de valider vos opérations.</string>
 	<key>CFBundleDisplayName</key>
-	<string>GodaFret Banque</string>
+	<string>Golden Bridge Pay</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -17,7 +17,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>godafret_bank</string>
+	<string>GB Pay</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

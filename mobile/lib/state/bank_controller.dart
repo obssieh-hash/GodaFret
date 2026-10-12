@@ -31,7 +31,7 @@ class BankController extends ChangeNotifier {
 
   bool get loaded => client != null;
 
-  String get currency => savings.isNotEmpty ? savings.first.currency : (loans.isNotEmpty ? loans.first.currency : 'EUR');
+  String get currency => savings.isNotEmpty ? savings.first.currency : (loans.isNotEmpty ? loans.first.currency : 'DJF');
 
   double get totalBalance => savings.fold(0, (s, a) => s + a.balance);
 

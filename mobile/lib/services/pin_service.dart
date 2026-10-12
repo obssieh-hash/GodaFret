@@ -81,7 +81,7 @@ class PinService {
   Future<bool> authenticateWithBiometrics() async {
     try {
       return await _localAuth.authenticate(
-        localizedReason: 'Déverrouillez GodaFret Banque',
+        localizedReason: 'Déverrouillez Golden Bridge Pay',
         biometricOnly: true,
       );
     } catch (_) {

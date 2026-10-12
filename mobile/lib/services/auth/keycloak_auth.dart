@@ -12,8 +12,8 @@ import 'auth_service.dart';
 ///
 /// L'application affiche ses propres écrans (identifiants puis code OTP) et
 /// échange ces informations contre un jeton via le flux « Direct Access
-/// Grant » du client public `godafret-mobile`, dont le flux est configuré
-/// avec l'étape « OTP » obligatoire (voir `infra/keycloak/godafret-realm.json`).
+/// Grant » du client public `gbpay-mobile`, dont le flux est configuré
+/// avec l'étape « OTP » obligatoire (voir `infra/keycloak/goldenbridge-realm.json`).
 /// Le jeton d'accès est ensuite envoyé à Fineract (OIDC Federation).
 class KeycloakAuthService implements AuthService {
   KeycloakAuthService(this.config, this.store, {Dio? dio})

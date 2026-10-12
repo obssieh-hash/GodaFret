@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme.dart';
+import '../../widgets/brand.dart';
 
 /// Fond sombre dégradé commun aux écrans d'authentification.
 class AuthScaffold extends StatelessWidget {
@@ -23,12 +24,12 @@ class AuthScaffold extends StatelessWidget {
             Positioned(
               top: -120,
               right: -80,
-              child: _Glow(color: AppColors.violet.withValues(alpha: 0.45), size: 320),
+              child: _Glow(color: AppColors.gold.withValues(alpha: 0.22), size: 320),
             ),
             Positioned(
               bottom: -140,
               left: -100,
-              child: _Glow(color: AppColors.teal.withValues(alpha: 0.25), size: 340),
+              child: _Glow(color: const Color(0xFF2563EB).withValues(alpha: 0.25), size: 340),
             ),
             SafeArea(
               child: Column(
@@ -72,21 +73,13 @@ class _Glow extends StatelessWidget {
       );
 }
 
+/// Logo des écrans de connexion : l'icône de l'application.
 class BrandLogo extends StatelessWidget {
   const BrandLogo({super.key, this.size = 64});
   final double size;
 
   @override
-  Widget build(BuildContext context) => Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          gradient: AppColors.primaryGradient,
-          borderRadius: BorderRadius.circular(size * 0.3),
-          boxShadow: [BoxShadow(color: AppColors.violet.withValues(alpha: 0.5), blurRadius: 30, offset: const Offset(0, 10))],
-        ),
-        child: Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: size * 0.5),
-      );
+  Widget build(BuildContext context) => AppIconImage(size: size);
 }
 
 /// Décoration de champ adaptée au fond sombre.
@@ -104,7 +97,7 @@ InputDecoration darkField(String label, IconData icon, {Widget? suffix}) => Inpu
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(color: Color(0xFF8B85FF), width: 1.6),
+        borderSide: const BorderSide(color: AppColors.gold, width: 1.6),
       ),
       errorStyle: const TextStyle(color: Color(0xFFFF8FA3)),
     );

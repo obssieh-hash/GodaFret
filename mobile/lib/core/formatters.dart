@@ -2,23 +2,32 @@ import 'package:intl/intl.dart';
 
 /// Formats français : montants, dates, dates Fineract.
 class Fmt {
-  static String money(num value, {String currency = 'EUR', bool signed = false}) {
+  static String money(num value, {String currency = 'DJF', bool signed = false}) {
     final f = NumberFormat.currency(
       locale: 'fr_FR',
       symbol: _symbol(currency),
-      decimalDigits: 2,
+      decimalDigits: decimals(currency),
     );
     final text = f.format(value.abs());
     if (signed) return '${value < 0 ? '−' : '+'} $text';
     return value < 0 ? '−$text' : text;
   }
 
-  static String compact(num value, {String currency = 'EUR'}) {
+  static String compact(num value, {String currency = 'DJF'}) {
     final f = NumberFormat.compactCurrency(locale: 'fr_FR', symbol: _symbol(currency));
     return f.format(value);
   }
 
+  /// Nombre de décimales d'une devise (le franc Djibouti n'en a pas).
+  static int decimals(String code) => switch (code) {
+        'DJF' || 'XOF' || 'XAF' || 'JPY' => 0,
+        _ => 2,
+      };
+
+  static String symbol(String code) => _symbol(code);
+
   static String _symbol(String code) => switch (code) {
+        'DJF' => 'Fdj',
         'EUR' => '€',
         'USD' => r'$',
         'XOF' || 'XAF' => 'FCFA',
@@ -60,6 +69,15 @@ class Fmt {
     if (raw is String) return DateTime.tryParse(raw);
     if (raw is int) return DateTime.fromMillisecondsSinceEpoch(raw);
     return null;
+  }
+
+  /// « 77101010 » → « 77 10 10 10 ».
+  static String phone(String? raw) {
+    if (raw == null || raw.isEmpty) return '—';
+    final digits = raw.replaceAll(RegExp(r'[^0-9+]'), '');
+    final local = digits.startsWith('+253') ? digits.substring(4) : digits;
+    if (local.length != 8) return raw;
+    return '${local.substring(0, 2)} ${local.substring(2, 4)} ${local.substring(4, 6)} ${local.substring(6)}';
   }
 
   static String maskAccount(String accountNo) {

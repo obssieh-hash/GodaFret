@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:godafret_bank/config/app_config.dart';
-import 'package:godafret_bank/main.dart';
-import 'package:godafret_bank/services/auth/demo_auth.dart';
-import 'package:godafret_bank/services/demo_repository.dart';
-import 'package:godafret_bank/services/pin_service.dart';
-import 'package:godafret_bank/services/secure_store.dart';
-import 'package:godafret_bank/state/bank_controller.dart';
-import 'package:godafret_bank/state/session_controller.dart';
+import 'package:golden_bridge_pay/config/app_config.dart';
+import 'package:golden_bridge_pay/main.dart';
+import 'package:golden_bridge_pay/services/auth/demo_auth.dart';
+import 'package:golden_bridge_pay/services/demo_repository.dart';
+import 'package:golden_bridge_pay/services/pin_service.dart';
+import 'package:golden_bridge_pay/services/secure_store.dart';
+import 'package:golden_bridge_pay/state/bank_controller.dart';
+import 'package:golden_bridge_pay/state/session_controller.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 
@@ -47,12 +47,12 @@ void main() {
     final bank = BankController(DemoRepository(), onUnauthorized: session.onUnauthorized);
     await tester.runAsync(session.init);
 
-    await tester.pumpWidget(GodaFretApp(session: session, bank: bank));
+    await tester.pumpWidget(GoldenBridgeApp(session: session, bank: bank));
     await tester.pumpAndSettle();
 
     // 🔐 Connexion
-    expect(find.text('Bienvenue'), findsOneWidget);
-    await tester.enterText(find.byType(TextFormField).at(0), 'camille');
+    expect(find.text('Envoyez, payez, recevez. Simplement.'), findsOneWidget);
+    await tester.enterText(find.byType(TextFormField).at(0), '77 10 10 10');
     await tester.enterText(find.byType(TextFormField).at(1), 'secret');
     await tester.tap(find.text('Se connecter'));
     await settle(tester);
@@ -72,29 +72,40 @@ void main() {
     await typePin(tester, '274913');
     await settle(tester);
 
-    // 📊 Tableau de bord
+    // 📊 Accueil façon portefeuille
     expect(session.stage, SessionStage.unlocked);
-    expect(find.textContaining('Camille'), findsWidgets);
-    expect(find.text('Solde total'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Tableau de bord'), 300, scrollable: find.byType(Scrollable).first);
-    expect(find.text('Tableau de bord'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Transfert'), -300, scrollable: find.byType(Scrollable).first);
-    final before = bank.totalBalance;
+    expect(find.textContaining('Fatouma'), findsWidgets);
+    expect(find.text('Solde disponible'), findsOneWidget);
+    for (final action in ['Envoyer', 'Recevoir', 'Payer', 'Retrait', 'Dépôt', 'Prêts', 'Rembourser', 'Historique']) {
+      expect(find.text(action), findsWidgets, reason: action);
+    }
+    final before = bank.savings.first.balance;
 
-    // 💸 Transfert interne vers le livret
-    await tester.tap(find.text('Transfert'));
+    // 📥 Recevoir : numéro + QR code
+    await tester.tap(find.text('Recevoir'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Livret Épargne+').last);
+    expect(find.text('Mon numéro'), findsOneWidget);
+    expect(find.text('77 10 10 10'), findsOneWidget);
+    Navigator.of(tester.element(find.text('Mon numéro'))).pop();
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextFormField).first, '25');
-    await tester.tap(find.text('Transférer'));
+
+    // 💸 Envoyer à un numéro de téléphone
+    await tester.tap(find.text('Envoyer'));
     await tester.pumpAndSettle();
-    expect(find.text('Confirmer le transfert'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).first, '77 20 20 20');
+    await tester.tap(find.text('Vérifier le numéro'));
+    await settle(tester);
+    expect(find.text('Ahmed Hassan Moussa'), findsOneWidget);
+    await tester.enterText(find.byType(TextFormField).first, '2500');
+    final sendButton = find.widgetWithText(FilledButton, 'Envoyer');
+    await tester.scrollUntilVisible(sendButton, 200, scrollable: find.byType(Scrollable).first);
+    await tester.tap(sendButton);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Envoyer 2'), findsOneWidget);
     await typePin(tester, '274913');
     await settle(tester);
-    expect(find.text('Transfert envoyé'), findsOneWidget);
-    expect(bank.totalBalance, closeTo(before, 0.001)); // transfert entre mes comptes
-    expect(bank.savings.firstWhere((a) => a.id == 102).balance, greaterThan(0));
+    expect(find.text('Argent envoyé'), findsOneWidget);
+    expect(bank.savings.first.balance, closeTo(before - 2500, 0.001));
     await tester.tap(find.text('Terminé'));
     await tester.pumpAndSettle();
 
@@ -107,7 +118,7 @@ void main() {
     expect(session.stage, SessionStage.unlocked);
 
     // Onglets
-    for (final tab in ['Comptes', 'Prêts', 'Historique', 'Profil']) {
+    for (final tab in ['Historique', 'Profil']) {
       await tester.tap(find.text(tab).last);
       await tester.pumpAndSettle();
     }

@@ -67,7 +67,7 @@ class SavingsAccount {
         accountNo: '${j['accountNo'] ?? ''}',
         productName: '${j['productName'] ?? 'Compte'}',
         balance: toDouble(j['accountBalance']),
-        currency: (j['currency'] as Map?)?['code'] as String? ?? 'EUR',
+        currency: (j['currency'] as Map?)?['code'] as String? ?? 'DJF',
         active: (j['status'] as Map?)?['active'] as bool? ?? true,
         status: (j['status'] as Map?)?['value'] as String? ?? '',
       );
@@ -80,7 +80,7 @@ class SavingsAccount {
       productName: '${j['savingsProductName'] ?? 'Compte'}',
       balance: toDouble(summary['accountBalance']),
       availableBalance: summary['availableBalance'] == null ? null : toDouble(summary['availableBalance']),
-      currency: (j['currency'] as Map?)?['code'] as String? ?? 'EUR',
+      currency: (j['currency'] as Map?)?['code'] as String? ?? 'DJF',
       active: (j['status'] as Map?)?['active'] as bool? ?? true,
       status: (j['status'] as Map?)?['value'] as String? ?? '',
       clientId: j['clientId'] as int?,
@@ -129,14 +129,14 @@ class LoanAccount {
         principal: toDouble(j['originalLoan'] ?? j['principal']),
         outstanding: toDouble(j['loanBalance']),
         amountPaid: toDouble(j['amountPaid']),
-        currency: (j['currency'] as Map?)?['code'] as String? ?? 'EUR',
+        currency: (j['currency'] as Map?)?['code'] as String? ?? 'DJF',
         state: _state(j['status'] as Map?),
         statusLabel: (j['status'] as Map?)?['value'] as String? ?? '',
       );
 
   factory LoanAccount.fromDetail(Map<String, dynamic> j) {
     final summary = (j['summary'] as Map?) ?? const {};
-    final currency = (j['currency'] as Map?)?['code'] as String? ?? 'EUR';
+    final currency = (j['currency'] as Map?)?['code'] as String? ?? 'DJF';
     final periods = ((j['repaymentSchedule'] as Map?)?['periods'] as List?) ?? const [];
     final txs = (j['transactions'] as List?) ?? const [];
     return LoanAccount(
@@ -359,7 +359,7 @@ class LoanProduct {
     this.maxRepayments,
     this.defaultRepayments,
     this.interestRate,
-    this.currency = 'EUR',
+    this.currency = 'DJF',
     this.description,
   });
 
@@ -374,7 +374,7 @@ class LoanProduct {
         maxRepayments: j['maxNumberOfRepayments'] as int?,
         defaultRepayments: j['numberOfRepayments'] as int?,
         interestRate: j['interestRatePerPeriod'] == null ? null : toDouble(j['interestRatePerPeriod']),
-        currency: (j['currency'] as Map?)?['code'] as String? ?? 'EUR',
+        currency: (j['currency'] as Map?)?['code'] as String? ?? 'DJF',
       );
 
   final int id;
@@ -391,6 +391,8 @@ class LoanProduct {
 }
 
 /// Bénéficiaire d'un transfert interne : un compte épargne de la banque.
+/// Destinataire d'un envoi, d'un paiement marchand ou d'un retrait agent :
+/// le compte épargne principal d'un client de la banque.
 class Beneficiary {
   const Beneficiary({
     required this.accountId,
@@ -398,6 +400,7 @@ class Beneficiary {
     required this.clientId,
     required this.clientName,
     required this.officeId,
+    this.phone,
   });
 
   final int accountId;
@@ -405,12 +408,14 @@ class Beneficiary {
   final int clientId;
   final String clientName;
   final int officeId;
+  final String? phone;
 }
 
-class PaymentType {
-  const PaymentType(this.id, this.name);
-  final int id;
-  final String name;
+/// Ne garde que les chiffres d'un numéro (« +253 77 10 10 10 » → « 77101010 »).
+String normalizePhone(String raw) {
+  var d = raw.replaceAll(RegExp(r'[^0-9]'), '');
+  if (d.startsWith('253') && d.length == 11) d = d.substring(3);
+  return d;
 }
 
 class AppNotification {

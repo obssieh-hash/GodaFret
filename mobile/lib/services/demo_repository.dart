@@ -10,7 +10,7 @@ class DemoRepository implements BankRepository {
     _seed();
   }
 
-  static const _cur = 'EUR';
+  static const _cur = 'DJF';
   final _rng = Random(7);
   int _nextId = 1000;
 
@@ -20,59 +20,53 @@ class DemoRepository implements BankRepository {
   final Map<int, LoanAccount> _loans = {};
   final List<AppNotification> _notifications = [];
 
-  static final _beneficiaries = {
-    '000000201': const Beneficiary(
-      accountId: 201,
-      accountNo: '000000201',
-      clientId: 2,
-      clientName: 'Lucas Bernard',
-      officeId: 1,
-    ),
-    '000000301': const Beneficiary(
-      accountId: 301,
-      accountNo: '000000301',
-      clientId: 3,
-      clientName: 'Sofia Haddad',
-      officeId: 1,
-    ),
-  };
+  /// Contacts, marchand et agent connus du mode démo (par téléphone et par compte).
+  static const _recipients = [
+    Beneficiary(accountId: 201, accountNo: '000000201', clientId: 2, clientName: 'Ahmed Hassan Moussa', officeId: 1, phone: '77202020'),
+    Beneficiary(accountId: 301, accountNo: '000000301', clientId: 3, clientName: 'Hodan Abdi Farah', officeId: 1, phone: '77303030'),
+    Beneficiary(accountId: 401, accountNo: '000000401', clientId: 4, clientName: 'Boulangerie La Palmeraie', officeId: 1, phone: '21350001'),
+    Beneficiary(accountId: 501, accountNo: '000000501', clientId: 5, clientName: 'Agent GB Balbala', officeId: 1, phone: '77990001'),
+  ];
 
   static const _products = [
     LoanProduct(
       id: 1,
       name: 'Prêt personnel',
-      description: 'Financez vos projets du quotidien.',
-      minPrincipal: 1000,
-      maxPrincipal: 30000,
-      defaultPrincipal: 5000,
+      description: 'Pour vos projets et imprévus.',
+      minPrincipal: 50000,
+      maxPrincipal: 2000000,
+      defaultPrincipal: 300000,
       minRepayments: 6,
-      maxRepayments: 72,
-      defaultRepayments: 24,
-      interestRate: 0.49,
+      maxRepayments: 48,
+      defaultRepayments: 12,
+      interestRate: 1.0,
+      currency: _cur,
     ),
     LoanProduct(
       id: 2,
-      name: 'Microcrédit pro',
-      description: 'Pour lancer ou développer votre activité.',
-      minPrincipal: 200,
-      maxPrincipal: 5000,
-      defaultPrincipal: 1500,
+      name: 'Microcrédit commerce',
+      description: 'Stock et fonds de roulement pour votre activité.',
+      minPrincipal: 20000,
+      maxPrincipal: 500000,
+      defaultPrincipal: 100000,
       minRepayments: 3,
-      maxRepayments: 24,
-      defaultRepayments: 12,
-      interestRate: 0.9,
+      maxRepayments: 18,
+      defaultRepayments: 6,
+      interestRate: 1.5,
+      currency: _cur,
     ),
     LoanProduct(
       id: 3,
-      name: 'Prêt auto',
-      description: 'Véhicule neuf ou d\'occasion.',
-      minPrincipal: 3000,
-      maxPrincipal: 50000,
-      defaultPrincipal: 15000,
+      name: 'Prêt équipement',
+      description: 'Moto, frigo, panneaux solaires…',
+      minPrincipal: 200000,
+      maxPrincipal: 5000000,
+      defaultPrincipal: 1000000,
       minRepayments: 12,
-      maxRepayments: 84,
-      defaultRepayments: 48,
-      interestRate: 0.39,
+      maxRepayments: 60,
+      defaultRepayments: 24,
+      interestRate: 0.9,
+      currency: _cur,
     ),
   ];
 
@@ -83,28 +77,28 @@ class DemoRepository implements BankRepository {
     _client = Client(
       id: 1,
       accountNo: '000000001',
-      displayName: 'Camille Martin',
-      firstname: 'Camille',
-      lastname: 'Martin',
-      mobileNo: '+33 6 12 34 56 78',
-      email: 'camille.martin@example.com',
+      displayName: 'Fatouma Ali Houssein',
+      firstname: 'Fatouma',
+      lastname: 'Ali Houssein',
+      mobileNo: '77101010',
+      email: 'fatouma.ali@example.dj',
       officeId: 1,
-      officeName: 'Agence Paris Centre',
-      activationDate: DateTime(now.year - 3, 4, 12),
-      externalId: 'camille',
+      officeName: 'Agence Djibouti Centre',
+      activationDate: DateTime(now.year - 2, 3, 12),
+      externalId: '77101010',
     );
 
     _savings[101] = const SavingsAccount(
       id: 101,
       accountNo: '000000101',
-      productName: 'Compte courant',
+      productName: 'Portefeuille GB Pay',
       balance: 0,
       currency: _cur,
     );
     _savings[102] = const SavingsAccount(
       id: 102,
       accountNo: '000000102',
-      productName: 'Livret Épargne+',
+      productName: 'Épargne',
       balance: 0,
       currency: _cur,
     );
@@ -117,20 +111,20 @@ class DemoRepository implements BankRepository {
     // Six mois d'historique.
     for (var m = 5; m >= 0; m--) {
       final month = DateTime(now.year, now.month - m, 1);
-      s(101, TxKind.deposit, 'Salaire', 2650 + _rng.nextInt(200).toDouble(), month.add(const Duration(days: 1)));
-      s(101, TxKind.withdrawal, 'Retrait DAB', -(60 + _rng.nextInt(140)).toDouble(), month.add(const Duration(days: 4)));
-      s(101, TxKind.withdrawal, 'Loyer', -890, month.add(const Duration(days: 5)));
-      s(101, TxKind.withdrawal, 'Courses', -(180 + _rng.nextInt(120)).toDouble(), month.add(const Duration(days: 9)));
-      s(101, TxKind.transferOut, 'Virement vers Livret Épargne+', -300, month.add(const Duration(days: 10)));
-      s(102, TxKind.transferIn, 'Virement depuis Compte courant', 300, month.add(const Duration(days: 10)));
-      s(101, TxKind.withdrawal, 'Échéance Prêt auto', -310.42, month.add(const Duration(days: 15)));
+      s(101, TxKind.transferIn, 'Salaire', 180000 + _rng.nextInt(5) * 1000.0, month.add(const Duration(days: 1)));
+      s(101, TxKind.transferOut, 'Retrait chez Agent GB Balbala', -(10000 + _rng.nextInt(4) * 5000.0), month.add(const Duration(days: 3)));
+      s(101, TxKind.transferOut, 'Loyer · Hodan Abdi Farah', -60000, month.add(const Duration(days: 5)));
+      s(101, TxKind.transferOut, 'Paiement Boulangerie La Palmeraie', -(2000 + _rng.nextInt(6) * 500.0), month.add(const Duration(days: 8)));
+      s(101, TxKind.transferOut, 'Vers Épargne', -15000, month.add(const Duration(days: 10)));
+      s(102, TxKind.transferIn, 'Depuis Portefeuille GB Pay', 15000, month.add(const Duration(days: 10)));
+      s(101, TxKind.transferOut, 'Échéance Prêt personnel', -23536, month.add(const Duration(days: 15)));
       if (m.isEven) {
-        s(101, TxKind.deposit, 'Remboursement Lucas', 45, month.add(const Duration(days: 18)));
+        s(101, TxKind.transferIn, 'Reçu de Ahmed Hassan Moussa', 5000, month.add(const Duration(days: 18)));
       }
-      s(101, TxKind.withdrawal, 'Électricité', -(70 + _rng.nextInt(40)).toDouble(), month.add(const Duration(days: 20)));
+      s(101, TxKind.transferOut, 'Envoi à Ahmed Hassan Moussa', -(3000 + _rng.nextInt(4) * 1000.0), month.add(const Duration(days: 21)));
     }
-    s(102, TxKind.deposit, 'Versement initial', 6000, DateTime(now.year, now.month - 6, 2));
-    s(102, TxKind.interest, 'Intérêts créditeurs', 38.5, DateTime(now.year, now.month - 3, 31));
+    s(101, TxKind.deposit, 'Dépôt en agence', 50000, DateTime(now.year, now.month - 6, 2));
+    s(102, TxKind.deposit, 'Dépôt en agence', 120000, DateTime(now.year, now.month - 6, 2));
 
     seed.sort((x, y) => x.$5.compareTo(y.$5));
     for (final t in seed.where((t) => !t.$5.isAfter(now))) {
@@ -139,10 +133,10 @@ class DemoRepository implements BankRepository {
 
     _loans[501] = _buildLoan(
       id: 501,
-      product: 'Prêt auto',
-      principal: 12000,
-      repayments: 42,
-      monthlyRate: 0.0039,
+      product: 'Prêt personnel',
+      principal: 500000,
+      repayments: 24,
+      monthlyRate: 0.01,
       start: DateTime(now.year, now.month - 6, 15),
       paidPeriods: now.day >= 15 ? 6 : 5,
     );
@@ -151,14 +145,14 @@ class DemoRepository implements BankRepository {
       AppNotification(
         id: 3,
         title: 'Échéance à venir',
-        body: 'Votre échéance de prêt auto de 310,31\u00a0€ sera prélevée le 15.',
+        body: 'Votre échéance de 23\u00a0536\u00a0Fdj sera prélevée le 15.',
         createdAt: now.subtract(const Duration(hours: 3)),
         read: false,
       ),
       AppNotification(
         id: 2,
-        title: 'Salaire reçu',
-        body: 'Un crédit de 2\u00a0700,00\u00a0€ a été enregistré sur votre compte courant.',
+        title: 'Argent reçu',
+        body: 'Vous avez reçu 180\u00a0000\u00a0Fdj (salaire) sur votre portefeuille.',
         createdAt: now.subtract(const Duration(days: 2)),
         read: false,
       ),
@@ -202,8 +196,9 @@ class DemoRepository implements BankRepository {
     var remaining = principal;
     final out = <Installment>[];
     for (var i = 1; i <= n; i++) {
-      final interest = remaining * r;
-      final princ = i == n ? remaining : payment - interest;
+      // Montants entiers : le franc Djibouti n'a pas de centimes.
+      final interest = (remaining * r).roundToDouble();
+      final princ = i == n ? remaining : (payment - interest).roundToDouble();
       remaining -= princ;
       final total = princ + interest;
       final done = i <= paid;
@@ -327,45 +322,26 @@ class DemoRepository implements BankRepository {
   }
 
   @override
-  Future<List<PaymentType>> paymentTypes() async => const [
-        PaymentType(1, 'Espèces en agence'),
-        PaymentType(2, 'Mobile money'),
-        PaymentType(3, 'Carte bancaire'),
-      ];
-
-  @override
-  Future<void> deposit(int accountId, double amount, {int? paymentTypeId, String? note}) async {
-    await _latency(700);
-    _check(amount);
-    _add(accountId, TxKind.deposit, note?.isNotEmpty == true ? note! : 'Dépôt', amount, DateTime.now());
-    _notify('Dépôt confirmé', 'Votre dépôt a bien été crédité.');
-  }
-
-  @override
-  Future<void> withdraw(int accountId, double amount, {int? paymentTypeId, String? note}) async {
-    await _latency(700);
-    _check(amount);
-    if (_savings[accountId]!.balance < amount) throw ApiException('Solde insuffisant pour ce retrait.');
-    _add(accountId, TxKind.withdrawal, note?.isNotEmpty == true ? note! : 'Retrait', -amount, DateTime.now());
-    _notify('Retrait effectué', 'Un retrait a été débité de votre compte.');
-  }
-
-  @override
-  Future<Beneficiary> findBeneficiary(String accountNo) async {
+  Future<Beneficiary> findRecipient(String query) async {
     await _latency(500);
-    final own = _savings.values.where((a) => a.accountNo == accountNo.trim());
-    if (own.isNotEmpty) {
-      return Beneficiary(
-        accountId: own.first.id,
-        accountNo: own.first.accountNo,
-        clientId: _client.id,
-        clientName: '${_client.displayName} · ${own.first.productName}',
-        officeId: 1,
-      );
+    final q = query.trim();
+    final digits = normalizePhone(q);
+    for (final a in _savings.values) {
+      if (a.accountNo == q) {
+        return Beneficiary(
+          accountId: a.id,
+          accountNo: a.accountNo,
+          clientId: _client.id,
+          clientName: '${_client.displayName} · ${a.productName}',
+          officeId: 1,
+          phone: _client.mobileNo,
+        );
+      }
     }
-    final b = _beneficiaries[accountNo.trim()];
-    if (b == null) throw ApiException('Aucun compte ne correspond à ce numéro.');
-    return b;
+    for (final r in _recipients) {
+      if (r.accountNo == q || (digits.isNotEmpty && r.phone == digits)) return r;
+    }
+    throw ApiException('Aucun compte Golden Bridge ne correspond à « $q ».');
   }
 
   @override
@@ -379,12 +355,12 @@ class DemoRepository implements BankRepository {
     _check(amount);
     if (_savings[from.id]!.balance < amount) throw ApiException('Solde insuffisant pour ce transfert.');
     if (to.accountId == from.id) throw ApiException('Choisissez un compte différent.');
-    final label = description.isEmpty ? 'Transfert vers ${to.clientName}' : description;
+    final label = description.isEmpty ? 'Envoi à ${to.clientName}' : description;
     _add(from.id, TxKind.transferOut, label, -amount, DateTime.now());
     if (_savings.containsKey(to.accountId)) {
-      _add(to.accountId, TxKind.transferIn, 'Transfert depuis ${from.productName}', amount, DateTime.now());
+      _add(to.accountId, TxKind.transferIn, 'Depuis ${from.productName}', amount, DateTime.now());
     }
-    _notify('Transfert envoyé', 'Votre transfert vers ${to.clientName} a été exécuté.');
+    _notify('Opération réussie', '$label : ${amount.round()} Fdj.');
   }
 
   @override
@@ -420,13 +396,13 @@ class DemoRepository implements BankRepository {
   }
 
   @override
-  Future<void> repayLoan(int loanId, double amount, {int? paymentTypeId}) async {
+  Future<void> repayLoan(int loanId, double amount, {required SavingsAccount from}) async {
     await _latency(800);
     _check(amount);
     final loan = _loans[loanId]!;
     if (amount > loan.outstanding + 0.005) throw ApiException('Le montant dépasse le capital restant dû.');
-    final current = _savings[101]!;
-    if (current.balance < amount) throw ApiException('Solde du compte courant insuffisant.');
+    final current = _savings[from.id]!;
+    if (current.balance < amount) throw ApiException('Solde insuffisant sur ${current.productName}.');
     var left = amount;
     final schedule = [
       for (final i in loan.schedule)
@@ -454,7 +430,7 @@ class DemoRepository implements BankRepository {
       id: _nextId++,
       accountId: loanId,
       kind: TxKind.repayment,
-      label: 'Remboursement anticipé',
+      label: 'Remboursement',
       amount: -amount,
       date: DateTime.now(),
       currency: _cur,
@@ -471,7 +447,7 @@ class DemoRepository implements BankRepository {
       [...loan.transactions, tx],
       LoanState.active,
     );
-    _add(101, TxKind.withdrawal, 'Remboursement ${loan.productName}', -amount, DateTime.now());
+    _add(from.id, TxKind.transferOut, 'Remboursement ${loan.productName}', -amount, DateTime.now());
     _notify('Remboursement reçu', 'Merci ! Votre paiement a été imputé sur votre prêt.');
   }
 

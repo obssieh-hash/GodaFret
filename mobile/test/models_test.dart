@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:godafret_bank/config/app_config.dart';
-import 'package:godafret_bank/core/formatters.dart';
-import 'package:godafret_bank/models/models.dart';
-import 'package:godafret_bank/services/api_client.dart';
-import 'package:godafret_bank/services/auth/keycloak_auth.dart';
-import 'package:godafret_bank/services/demo_repository.dart';
-import 'package:godafret_bank/services/pin_service.dart';
+import 'package:golden_bridge_pay/config/app_config.dart';
+import 'package:golden_bridge_pay/core/formatters.dart';
+import 'package:golden_bridge_pay/models/models.dart';
+import 'package:golden_bridge_pay/services/api_client.dart';
+import 'package:golden_bridge_pay/services/auth/keycloak_auth.dart';
+import 'package:golden_bridge_pay/services/demo_repository.dart';
+import 'package:golden_bridge_pay/services/pin_service.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:dio/dio.dart';
 import 'dart:convert';
@@ -25,7 +25,11 @@ void main() {
   });
 
   test('montants au format français', () {
-    expect(Fmt.money(1234.5).replaceAll(RegExp('[\u00a0\u202f]'), ' '), '1 234,50 €');
+    String plain(String v) => v.replaceAll(RegExp('[\u00a0\u202f]'), ' ');
+    expect(plain(Fmt.money(1234.5, currency: 'EUR')), '1 234,50 €');
+    expect(plain(Fmt.money(85000)), '85 000 Fdj');
+    expect(Fmt.phone('+253 77101010'), '77 10 10 10');
+    expect(normalizePhone('+253 77 10 10 10'), '77101010');
     expect(Fmt.money(-20, signed: true), startsWith('−'));
     expect(Fmt.maskAccount('000000101'), '•••• 0101');
     expect(Fmt.initials('Camille Martin'), 'CM');

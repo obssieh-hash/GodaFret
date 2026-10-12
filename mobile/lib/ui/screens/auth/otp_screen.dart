@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../../state/session_controller.dart';
 import '../../widgets/common.dart';
+import '../../../core/theme.dart';
 import 'auth_scaffold.dart';
 
 /// Étape MFA : saisie du code à 6 chiffres.
@@ -185,7 +186,7 @@ class _OtpBoxes extends StatelessWidget {
                       color: Colors.white.withValues(alpha: i < text.length ? 0.14 : 0.06),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: active ? const Color(0xFF8B85FF) : Colors.white.withValues(alpha: 0.1),
+                        color: active ? AppColors.gold : Colors.white.withValues(alpha: 0.1),
                         width: active ? 2 : 1,
                       ),
                     ),

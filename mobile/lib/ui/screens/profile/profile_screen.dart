@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/brand.dart';
 import '../../../core/formatters.dart';
 import '../../../core/theme.dart';
 import '../../../state/bank_controller.dart';
@@ -69,8 +70,7 @@ class ProfileScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Column(
               children: [
-                _InfoTile(Icons.badge_outlined, 'Identifiant', session.auth.username ?? client.externalId ?? '—'),
-                _InfoTile(Icons.phone_iphone_rounded, 'Téléphone', client.mobileNo ?? '—'),
+                _InfoTile(Icons.phone_iphone_rounded, 'Téléphone', '${Brand.phonePrefix} ${Fmt.phone(client.mobileNo ?? session.auth.username)}'),
                 _InfoTile(Icons.alternate_email_rounded, 'E-mail', client.email ?? '—'),
                 _InfoTile(Icons.store_mall_directory_outlined, 'Agence', client.officeName ?? '—'),
                 _InfoTile(Icons.calendar_month_outlined, 'Client depuis', Fmt.date(client.activationDate)),
@@ -138,7 +138,7 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: 16),
           Center(
             child: Text(
-              'GodaFret Banque · propulsé par Apache Fineract',
+              '${Brand.app} · ${Brand.bank}',
               style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
             ),
           ),

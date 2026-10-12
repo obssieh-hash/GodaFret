@@ -9,8 +9,8 @@ import '../../../state/bank_controller.dart';
 import '../../widgets/common.dart';
 import '../../widgets/transaction_tile.dart';
 import '../home/home_shell.dart';
-import '../operations/operation_screen.dart';
-import '../operations/transfer_screen.dart';
+import '../wallet/receive_screen.dart';
+import '../wallet/send_screen.dart';
 
 class AccountDetailScreen extends StatefulWidget {
   const AccountDetailScreen({super.key, required this.accountId});
@@ -98,22 +98,22 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
                 Row(
                   children: [
                     _Action(
-                      icon: Icons.add_rounded,
-                      label: 'Dépôt',
-                      color: AppColors.green,
-                      onTap: () => push(context, OperationScreen(type: OperationType.deposit, accountId: a.id)),
-                    ),
-                    _Action(
-                      icon: Icons.remove_rounded,
-                      label: 'Retrait',
-                      color: AppColors.red,
-                      onTap: () => push(context, OperationScreen(type: OperationType.withdrawal, accountId: a.id)),
-                    ),
-                    _Action(
-                      icon: Icons.swap_horiz_rounded,
-                      label: 'Transfert',
+                      icon: Icons.send_rounded,
+                      label: 'Envoyer',
                       color: AppColors.violet,
-                      onTap: () => push(context, TransferScreen(fromAccountId: a.id)),
+                      onTap: () => push(context, const SendScreen()),
+                    ),
+                    _Action(
+                      icon: Icons.qr_code_2_rounded,
+                      label: 'Recevoir',
+                      color: AppColors.indigo,
+                      onTap: () => push(context, const ReceiveScreen()),
+                    ),
+                    _Action(
+                      icon: Icons.payments_outlined,
+                      label: 'Retrait',
+                      color: AppColors.amber,
+                      onTap: () => push(context, const SendScreen(mode: SendMode.agent)),
                     ),
                   ],
                 ),
