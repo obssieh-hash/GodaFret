@@ -14,6 +14,18 @@ puis l'application **Golden Bridge Pay** sur un **téléphone Android connecté 
 > ⚠️ Mode **réseau local de test** : le trafic est en HTTP non chiffré. Ne l'ouvrez pas sur
 > Internet et n'y mettez pas de vrais clients. Pour la production, voir `infra/README.md`.
 
+## ⚡ Installation en une seule commande
+
+Sur la VM Ubuntu (connectée à Internet), copiez-collez cette ligne : elle télécharge le code depuis
+GitHub, installe tout, démarre la banque et crée la cliente de démonstration.
+
+```bash
+sudo apt-get update && sudo apt-get install -y git && { [ -d /opt/golden-bridge/.git ] && sudo git -C /opt/golden-bridge pull || sudo git clone -b claude/flutter-banking-app-3xii1t https://github.com/obssieh-hash/GodaFret.git /opt/golden-bridge; } && cd /opt/golden-bridge/infra && sudo bash install-local.sh && sudo bash demo-local.sh
+```
+
+Comptez 10 à 15 minutes la première fois. À la fin, les adresses et mots de passe s'affichent.
+Les étapes détaillées ci-dessous expliquent la même chose pas à pas.
+
 ---
 
 ## Étape 0 — Ce qu'il faut
