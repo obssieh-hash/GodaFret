@@ -40,12 +40,12 @@ sudo git clone -b claude/flutter-banking-app-3xii1t https://github.com/obssieh-h
 
 (Si le dépôt est privé, git demande votre identifiant GitHub et un *personal access token* comme mot de passe.)
 
-**Option B — avec l'archive `golden-bridge.zip`** (depuis votre PC) :
+**Option B — avec l'archive `golden-bridge-serveur.zip`** (depuis votre PC) :
 
 ```bash
-scp golden-bridge.zip utilisateur@IP:~
+scp golden-bridge-serveur.zip utilisateur@IP:~
 ssh utilisateur@IP
-sudo apt install -y unzip && sudo unzip ~/golden-bridge.zip -d /opt/golden-bridge
+sudo apt install -y unzip && sudo unzip ~/golden-bridge-serveur.zip -d /opt   # crée /opt/golden-bridge
 ```
 
 ---
