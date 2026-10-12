@@ -1,13 +1,13 @@
 # GodaFret
 
-➡️ **Installer sur un serveur Ubuntu du réseau local : [INSTALLATION-LOCALE.md](INSTALLATION-LOCALE.md)**
+➡️ **Installer Golden Bridge Bank sur un serveur Ubuntu du réseau local : [INSTALLATION-LOCALE.md](INSTALLATION-LOCALE.md)**
 
 Ce dépôt contient deux projets :
 
 | Dossier | Contenu |
 |---|---|
-| [`mobile/`](mobile/README.md) | **GodaFret Banque** : application mobile Flutter (connexion + PIN, MFA/OTP, solde, dépôt, retrait, transfert interne, prêt, échéancier, remboursement, historique, notifications, tableau de bord) sur Apache Fineract |
-| [`infra/`](infra/README.md) | Serveur Ubuntu : Fineract + Mifos X + PostgreSQL + Keycloak (MFA) + Caddy, en Docker Compose |
+| [`mobile/`](mobile/README.md) | **Golden Bridge Pay** : portefeuille mobile Flutter des clients (connexion + PIN, MFA/OTP, solde, envoyer, payer, recevoir, retrait/dépôt via agent, prêts, échéancier, remboursement, historique, notifications) sur Apache Fineract |
+| [`infra/`](infra/README.md) | **Golden Bridge Bank** côté serveur et agences : Fineract + console Mifos X personnalisée + PostgreSQL + Keycloak (MFA) + Caddy, en Docker Compose |
 | racine | Desk d'investissement GodaFret (Streamlit), décrit ci-dessous |
 
 # GodaFret — Desk d'investissement

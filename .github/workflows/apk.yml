@@ -1,4 +1,4 @@
-# Construit l'APK Android de GodaFret Banque et le publie en téléchargement
+# Construit l'APK Android de Golden Bridge Pay et le publie en téléchargement
 # (onglet « Releases » du dépôt) à chaque modification de l'application.
 name: APK Android
 
@@ -62,25 +62,25 @@ jobs:
       - name: Construire l'APK
         run: |
           flutter build apk --release --android-project-arg=allowCleartext=true
-          cp build/app/outputs/flutter-apk/app-release.apk ../godafret-banque.apk
+          cp build/app/outputs/flutter-apk/app-release.apk ../golden-bridge-pay.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: godafret-banque-apk
-          path: godafret-banque.apk
+          name: golden-bridge-pay-apk
+          path: golden-bridge-pay.apk
 
       - name: Publier en téléchargement
         uses: softprops/action-gh-release@v2
         with:
           tag_name: apk-${{ github.run_number }}
           target_commitish: ${{ github.sha }}
-          name: GodaFret Banque — APK ${{ github.run_number }}
+          name: Golden Bridge Pay — APK ${{ github.run_number }}
           make_latest: true
-          files: godafret-banque.apk
+          files: golden-bridge-pay.apk
           body: |
-            Application Android **GodaFret Banque** (commit ${{ github.sha }}).
+            Application Android **Golden Bridge Pay** de Golden Bridge Bank (commit ${{ github.sha }}).
 
-            1. Téléchargez **godafret-banque.apk** ci-dessous depuis le téléphone.
+            1. Téléchargez **golden-bridge-pay.apk** ci-dessous depuis le téléphone.
             2. Ouvrez-le et autorisez l'installation depuis cette source.
             3. Dans l'application : ⚙️ → **Démo** (sans serveur, code OTP 123456)
                ou **Mon serveur** → adresse IP de votre serveur Ubuntu.

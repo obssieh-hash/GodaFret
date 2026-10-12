@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installation de GodaFret Banque sur un serveur Ubuntu du RÉSEAU LOCAL (sans nom de domaine).
+# Installation de Golden Bridge Bank sur un serveur Ubuntu du RÉSEAU LOCAL (sans nom de domaine).
 # Usage : sudo ./install-local.sh            (détecte l'IP du serveur)
 #         sudo ./install-local.sh 192.168.1.50
 set -euo pipefail
@@ -92,23 +92,23 @@ for i in $(seq 1 30); do
     --config /tmp/kcadm.config >/dev/null 2>&1 && break
   sleep 5
 done
-for realm in master godafret; do
+for realm in master goldenbridge; do
   docker compose exec -T keycloak /opt/keycloak/bin/kcadm.sh update "realms/$realm" -s sslRequired=NONE --config /tmp/kcadm.config
 done
 
 cat <<MSG
 
 ==============================================================
- GodaFret Banque est démarrée sur http://${SERVER_IP}
+ Golden Bridge Bank est démarrée sur http://${SERVER_IP}
 ==============================================================
- Mifos X (back-office)  : http://${SERVER_IP}
+ Agences (Mifos X)      : http://${SERVER_IP}
      utilisateur mifos / mot de passe « password »  → À CHANGER tout de suite
  Keycloak (admin)       : http://${SERVER_IP}:8081/admin
      utilisateur ${KEYCLOAK_ADMIN} / mot de passe : ${KEYCLOAK_ADMIN_PASSWORD}
- Espace sécurité client : http://${SERVER_IP}:8081/realms/godafret/account
- Application mobile     : adresse du serveur à saisir = ${SERVER_IP}
+ Espace sécurité client : http://${SERVER_IP}:8081/realms/goldenbridge/account
+ App Golden Bridge Pay  : ⚙️ → Mon serveur → ${SERVER_IP}
 
- Données de démonstration (client « camille ») :
+ Données de démonstration (cliente « Fatouma », tél. 77101010) :
    sudo ./demo-local.sh
  Les mots de passe sont dans $(pwd)/.env
 ==============================================================

@@ -1,6 +1,7 @@
-# GodaFret Banque — Apache Fineract + Mifos X + PostgreSQL + Keycloak (MFA)
+# Golden Bridge Bank — Apache Fineract + Mifos X (agences) + PostgreSQL + Keycloak (MFA)
+# L'application mobile des clients s'appelle Golden Bridge Pay.
 # Usage : cp .env.example .env && nano .env && docker compose up -d
-name: godafret-banque
+name: golden-bridge
 
 services:
   postgres:
@@ -37,7 +38,8 @@ services:
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?définir dans .env}
     volumes:
-      - ./keycloak/godafret-realm.json:/opt/keycloak/data/import/godafret-realm.json:ro
+      - ./keycloak/goldenbridge-realm.json:/opt/keycloak/data/import/goldenbridge-realm.json:ro
+      - ./keycloak/themes/goldenbridge:/opt/keycloak/themes/goldenbridge:ro
     ports:
       # Console d'administration accessible uniquement depuis le serveur (tunnel SSH).
       - "127.0.0.1:8081:8080"
@@ -63,7 +65,7 @@ services:
       FINERACT_DEFAULT_TENANTDB_IDENTIFIER: ${FINERACT_TENANT:-default}
       FINERACT_DEFAULT_TENANTDB_NAME: fineract_default
       FINERACT_DEFAULT_TENANTDB_TIMEZONE: ${FINERACT_TIMEZONE:-Europe/Paris}
-      FINERACT_DEFAULT_TENANTDB_DESCRIPTION: GodaFret Banque
+      FINERACT_DEFAULT_TENANTDB_DESCRIPTION: Golden Bridge Bank
       # TLS terminé par Caddy
       FINERACT_SERVER_PORT: "8080"
       FINERACT_SERVER_SSL_ENABLED: "false"
@@ -71,7 +73,7 @@ services:
       FINERACT_SECURITY_BASICAUTH_ENABLED: "true"
       FINERACT_SECURITY_OIDC_FEDERATION_ENABLED: "false"
       FINERACT_SECURITY_CORS_ALLOWED_ORIGIN_PATTERNS: https://${ADMIN_DOMAIN}
-      FINERACT_MANAGEMENT_ENDPOINT_WEB_EXPOSURE_INCLUDE: health
+      FINERACT_MANAGEMENT_ENDPOINT_WEB_EXPOSURE_INCLUDE: health,info
       JAVA_TOOL_OPTIONS: "-Xmx2G -XX:+UseContainerSupport"
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "8080"]
@@ -100,9 +102,9 @@ services:
       FINERACT_SECURITY_OIDC_PROVIDER: keycloak
       FINERACT_SECURITY_OIDC_USERNAME_CLAIM: preferred_username
       FINERACT_SECURITY_OIDC_AUTO_CREATE_USER: "false"
-      FINERACT_SECURITY_OIDCFEDERATION_ISSUERS_0_ISSUERURI: https://${AUTH_DOMAIN}/realms/godafret
+      FINERACT_SECURITY_OIDCFEDERATION_ISSUERS_0_ISSUERURI: https://${AUTH_DOMAIN}/realms/goldenbridge
       FINERACT_SECURITY_OIDCFEDERATION_ISSUERS_0_TENANTID: ${FINERACT_TENANT:-default}
-      FINERACT_SECURITY_OIDCFEDERATION_ISSUERS_0_JWKSURI: http://keycloak:8080/realms/godafret/protocol/openid-connect/certs
+      FINERACT_SECURITY_OIDCFEDERATION_ISSUERS_0_JWKSURI: http://keycloak:8080/realms/goldenbridge/protocol/openid-connect/certs
       # Contournement d'un bug de Fineract (dépendance circulaire au démarrage quand OIDC est activé).
       SPRING_MAIN_ALLOW_CIRCULAR_REFERENCES: "true"
       # Les traitements batch restent sur l'instance back-office.
@@ -117,9 +119,26 @@ services:
         condition: service_started
     networks: [backend]
 
+  # Back-office des agences (Mifos X) aux couleurs de Golden Bridge Bank.
   mifos-web-app:
     image: openmf/web-app:master
     restart: unless-stopped
+    command:
+      - /bin/sh
+      - -c
+      - >-
+        sed -i 's/"APP_NAME": "Mifos X"/"APP_NAME": "Golden Bridge Bank"/' /usr/share/nginx/html/assets/translations/*.json &&
+        sed -i 's#<title>.*</title>#<title>Golden Bridge Bank</title>#' /usr/share/nginx/html/index.html &&
+        (grep -q golden-bridge.css /usr/share/nginx/html/index.html ||
+         sed -i 's#</head>#<link rel="stylesheet" href="golden-bridge.css"></head>#' /usr/share/nginx/html/index.html) &&
+        envsubst < /usr/share/nginx/html/assets/env.template.js > /usr/share/nginx/html/assets/env.js &&
+        exec nginx -g 'daemon off;'
+    volumes:
+      - ./branding/golden_bridge_bank.png:/usr/share/nginx/html/assets/images/mifos_lg-logo.png:ro
+      - ./branding/bank_icon.png:/usr/share/nginx/html/assets/images/MifosX_logo.png:ro
+      - ./branding/bank_icon.png:/usr/share/nginx/html/assets/images/MifosX_logoSmall.png:ro
+      - ./branding/gb-cover.png:/usr/share/nginx/html/assets/images/gb-cover.png:ro
+      - ./branding/mifos-golden-bridge.css:/usr/share/nginx/html/golden-bridge.css:ro
     environment:
       FINERACT_API_URLS: https://${ADMIN_DOMAIN}
       FINERACT_API_URL: https://${ADMIN_DOMAIN}

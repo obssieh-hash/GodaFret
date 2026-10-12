@@ -1,6 +1,6 @@
 {
-  "realm": "godafret",
-  "displayName": "GodaFret Banque",
+  "realm": "goldenbridge",
+  "displayName": "Golden Bridge Bank",
   "enabled": true,
   "sslRequired": "external",
   "registrationAllowed": false,
@@ -27,9 +27,16 @@
   "otpPolicyDigits": 6,
   "otpPolicyPeriod": 30,
   "otpPolicyLookAheadWindow": 1,
-  "otpSupportedApplications": ["totpAppFreeOTPName", "totpAppGoogleName", "totpAppMicrosoftAuthenticatorName"],
+  "otpSupportedApplications": [
+    "totpAppFreeOTPName",
+    "totpAppGoogleName",
+    "totpAppMicrosoftAuthenticatorName"
+  ],
   "internationalizationEnabled": true,
-  "supportedLocales": ["fr", "en"],
+  "supportedLocales": [
+    "fr",
+    "ar"
+  ],
   "defaultLocale": "fr",
   "requiredActions": [
     {
@@ -62,14 +69,19 @@
   ],
   "roles": {
     "realm": [
-      { "name": "client-banque", "description": "Client utilisateur de l'application mobile" }
+      {
+        "name": "client-banque",
+        "description": "Client de l'application Golden Bridge Pay"
+      }
     ]
   },
-  "defaultRoles": ["client-banque"],
+  "defaultRoles": [
+    "client-banque"
+  ],
   "clients": [
     {
-      "clientId": "godafret-mobile",
-      "name": "GodaFret Banque (application mobile)",
+      "clientId": "gbpay-mobile",
+      "name": "Golden Bridge Pay (application mobile)",
       "enabled": true,
       "publicClient": true,
       "protocol": "openid-connect",
@@ -77,14 +89,25 @@
       "directAccessGrantsEnabled": true,
       "implicitFlowEnabled": false,
       "serviceAccountsEnabled": false,
-      "redirectUris": ["com.godafret.bank:/oauthredirect"],
-      "webOrigins": ["+"],
+      "redirectUris": [
+        "com.goldenbridge.pay:/oauthredirect"
+      ],
+      "webOrigins": [
+        "+"
+      ],
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "com.godafret.bank:/logout"
+        "post.logout.redirect.uris": "com.goldenbridge.pay:/logout"
       },
-      "defaultClientScopes": ["profile", "email", "roles", "web-origins"],
-      "optionalClientScopes": ["offline_access"],
+      "defaultClientScopes": [
+        "profile",
+        "email",
+        "roles",
+        "web-origins"
+      ],
+      "optionalClientScopes": [
+        "offline_access"
+      ],
       "protocolMappers": [
         {
           "name": "fineract_tenant",
@@ -124,5 +147,8 @@
         }
       ]
     }
-  ]
+  ],
+  "displayNameHtml": "<span class=\"gb-brand\">golden bridge <b>BANK</b></span>",
+  "loginTheme": "goldenbridge",
+  "emailTheme": "keycloak"
 }

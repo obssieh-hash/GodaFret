@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
-"""Crée un jeu de données de démonstration dans Fineract (+ Keycloak).
+"""Crée un jeu de données de démonstration Golden Bridge Bank dans Fineract (+ Keycloak).
 
-- devise EUR, moyens de paiement, produits épargne et prêt ;
-- rôle « Client mobile » (permissions minimales de l'application) ;
-- un client « Camille Martin » (External Id = identifiant de connexion) avec
-  compte courant, livret et un prêt décaissé ;
-- un second client « Lucas Bernard » (bénéficiaire de transferts) ;
-- l'utilisateur Fineract correspondant et, si --keycloak-url est fourni,
-  l'utilisateur Keycloak (MFA TOTP exigée à la première connexion web).
+- devise franc Djibouti (DJF, sans décimales), produits épargne et prêt ;
+- rôle « Client mobile » (permissions minimales de Golden Bridge Pay) ;
+- la cliente « Fatouma Ali Houssein » (identifiant = n° de téléphone 77101010)
+  avec portefeuille, épargne et un prêt décaissé ;
+- un contact (Ahmed, 77202020), un marchand (Boulangerie La Palmeraie,
+  21350001) et un agent (Agent GB Balbala, 77990001) ;
+- l'utilisateur Fineract et, si --keycloak-url est fourni, l'utilisateur
+  Keycloak (MFA TOTP exigée à la première connexion web).
 
-Exemple (sur le serveur, ports internes via « docker compose port ») :
+Exemple :
   python3 seed_demo.py --fineract http://localhost:8080/fineract-provider/api/v1 \
       --admin-user mifos --admin-password password \
       --keycloak-url http://localhost:8081 --keycloak-admin admin --keycloak-password '...' \
-      --username camille --password 'MotDePasse-2026'
+      --username 77101010 --password 'MotDePasse-2026'
 
 Uniquement les bibliothèques standard de Python.
 """
@@ -34,15 +35,13 @@ MOBILE_PERMISSIONS = [
     "READ_SAVINGSACCOUNT",
     "READ_LOAN",
     "READ_LOANPRODUCT",
-    "READ_PAYMENTTYPE",
     "READ_ACCOUNTTRANSFER",
-    "DEPOSIT_SAVINGSACCOUNT",
-    "WITHDRAWAL_SAVINGSACCOUNT",
+    # Envoyer, payer, retirer chez un agent, rembourser un prêt = virements.
     "CREATE_ACCOUNTTRANSFER",
     "CREATE_LOAN",
-    "REPAYMENT_LOAN",
     "CREATE_LOANNOTE",
 ]
+# Pas de DEPOSIT/WITHDRAWAL_SAVINGSACCOUNT : les espèces passent par un agent ou une agence.
 
 FMT = {"locale": "en", "dateFormat": "yyyy-MM-dd"}
 
@@ -122,8 +121,8 @@ def ensure_savings_product(api: Api, name: str, short: str, rate: float) -> int:
         "locale": "en",
         "name": name,
         "shortName": short,
-        "currencyCode": "EUR",
-        "digitsAfterDecimal": 2,
+        "currencyCode": "DJF",
+        "digitsAfterDecimal": 0,
         "inMultiplesOf": 0,
         "nominalAnnualInterestRate": rate,
         "interestCompoundingPeriodType": 1,
@@ -143,8 +142,8 @@ def ensure_loan_product(api: Api, name: str, short: str, rate: float, pmin, pmax
         "name": name,
         "shortName": short,
         "description": f"{name} — produit de démonstration",
-        "currencyCode": "EUR",
-        "digitsAfterDecimal": 2,
+        "currencyCode": "DJF",
+        "digitsAfterDecimal": 0,
         "inMultiplesOf": 0,
         "principal": pdef,
         "minPrincipal": pmin,
@@ -168,18 +167,18 @@ def ensure_loan_product(api: Api, name: str, short: str, rate: float, pmin, pmax
 
 
 def ensure_client(api: Api, external_id: str, first: str, last: str, mobile: str, email: str) -> int:
+    """Client personne physique ; avec last="" : entreprise (marchand, agent)."""
     page = api.get("/clients", externalId=external_id)
     if page.get("pageItems"):
         return page["pageItems"][0]["id"]
+    names = {"legalFormId": 1, "firstname": first, "lastname": last} if last else {"legalFormId": 2, "fullname": first}
     return api.post("/clients", {
         **FMT,
         "officeId": 1,
-        "legalFormId": 1,
-        "firstname": first,
-        "lastname": last,
+        **names,
         "externalId": external_id,
         "mobileNo": mobile,
-        "emailAddress": email,
+        **({"emailAddress": email} if email else {}),
         "active": True,
         "activationDate": day(-120),
         "submittedOnDate": day(-120),
@@ -210,7 +209,7 @@ def ensure_loan(api: Api, client_id: int, product_id: int) -> int:
         "loanType": "individual",
         "clientId": client_id,
         "productId": product_id,
-        "principal": 6000,
+        "principal": 500000,
         "numberOfRepayments": 24,
         "repaymentEvery": 1,
         "repaymentFrequencyType": t["repaymentFrequencyType"]["id"],
@@ -225,7 +224,7 @@ def ensure_loan(api: Api, client_id: int, product_id: int) -> int:
         "submittedOnDate": day(-95),
     })["loanId"]
     api.post(f"/loans/{lid}", {**FMT, "approvedOnDate": day(-95)}, command="approve")
-    api.post(f"/loans/{lid}", {**FMT, "actualDisbursementDate": day(-95), "transactionAmount": 6000}, command="disburse")
+    api.post(f"/loans/{lid}", {**FMT, "actualDisbursementDate": day(-95), "transactionAmount": 500000}, command="disburse")
     return lid
 
 
@@ -280,12 +279,12 @@ def keycloak_user(url: str, admin: str, admin_password: str, username: str, pass
     })["access_token"]
 
     # Autorise l'attribut fineract_client_id (profil utilisateur Keycloak 24+).
-    profile = req("GET", "/admin/realms/godafret/users/profile", token=token)
+    profile = req("GET", "/admin/realms/goldenbridge/users/profile", token=token)
     if profile.get("unmanagedAttributePolicy") != "ADMIN_EDIT":
         profile["unmanagedAttributePolicy"] = "ADMIN_EDIT"
-        req("PUT", "/admin/realms/godafret/users/profile", profile, token=token)
+        req("PUT", "/admin/realms/goldenbridge/users/profile", profile, token=token)
 
-    existing = req("GET", f"/admin/realms/godafret/users?exact=true&username={urllib.parse.quote(username)}", token=token)
+    existing = req("GET", f"/admin/realms/goldenbridge/users?exact=true&username={urllib.parse.quote(username)}", token=token)
     body = {
         "username": username,
         "firstName": first,
@@ -297,13 +296,13 @@ def keycloak_user(url: str, admin: str, admin_password: str, username: str, pass
         "requiredActions": ["CONFIGURE_TOTP"] if require_otp else [],
     }
     if not existing:
-        req("POST", "/admin/realms/godafret/users", body, token=token)
-        existing = req("GET", f"/admin/realms/godafret/users?exact=true&username={urllib.parse.quote(username)}", token=token)
+        req("POST", "/admin/realms/goldenbridge/users", body, token=token)
+        existing = req("GET", f"/admin/realms/goldenbridge/users?exact=true&username={urllib.parse.quote(username)}", token=token)
     uid = existing[0]["id"]
     # Réapplique le profil : Keycloak ajoute les actions par défaut à la création.
-    req("PUT", f"/admin/realms/godafret/users/{uid}", body, token=token)
+    req("PUT", f"/admin/realms/goldenbridge/users/{uid}", body, token=token)
     try:
-        req("PUT", f"/admin/realms/godafret/users/{uid}/reset-password",
+        req("PUT", f"/admin/realms/goldenbridge/users/{uid}/reset-password",
             {"type": "password", "value": password, "temporary": False}, token=token)
     except SystemExit as e:
         # Relance du script avec le même mot de passe : historique des mots de passe.
@@ -317,7 +316,7 @@ def main():
     p.add_argument("--tenant", default="default")
     p.add_argument("--admin-user", default="mifos")
     p.add_argument("--admin-password", default="password")
-    p.add_argument("--username", default="camille")
+    p.add_argument("--username", default="77101010", help="identifiant de connexion = n° de téléphone")
     p.add_argument("--password", required=True, help="mot de passe Keycloak du client de démo")
     p.add_argument("--keycloak-url")
     p.add_argument("--keycloak-admin", default="admin")
@@ -326,32 +325,41 @@ def main():
     a = p.parse_args()
 
     api = Api(a.fineract, a.admin_user, a.admin_password, a.tenant)
-    api.put("/currencies", {"currencies": ["EUR"]})
+    api.put("/currencies", {"currencies": ["DJF"]})
     ensure_payment_types(api)
-    current = ensure_savings_product(api, "Compte courant", "CC", 0)
-    livret = ensure_savings_product(api, "Livret Épargne+", "LIV", 2)
-    perso = ensure_loan_product(api, "Prêt personnel", "PP", 0.5, 1000, 30000, 5000, 6, 72, 24)
-    ensure_loan_product(api, "Microcrédit pro", "MC", 0.9, 200, 5000, 1500, 3, 24, 12)
+    wallet = ensure_savings_product(api, "Portefeuille GB Pay", "GBP", 0)
+    savings = ensure_savings_product(api, "Épargne", "EPA", 2)
+    perso = ensure_loan_product(api, "Prêt personnel", "PP", 1.0, 50000, 2000000, 300000, 6, 48, 12)
+    ensure_loan_product(api, "Microcrédit commerce", "MCC", 1.5, 20000, 500000, 100000, 3, 18, 6)
 
-    camille = ensure_client(api, a.username, "Camille", "Martin", "+33612345678", "camille.martin@example.com")
-    cc = ensure_savings(api, camille, current, 2500)
-    ensure_savings(api, camille, livret, 6000)
-    ensure_loan(api, camille, perso)
-    lucas = ensure_client(api, "lucas", "Lucas", "Bernard", "+33698765432", "lucas.bernard@example.com")
-    lucas_cc = ensure_savings(api, lucas, current, 100)
+    fatouma = ensure_client(api, a.username, "Fatouma", "Ali Houssein", a.username, "fatouma.ali@example.dj")
+    wallet_id = ensure_savings(api, fatouma, wallet, 150000)
+    ensure_savings(api, fatouma, savings, 120000)
+    ensure_loan(api, fatouma, perso)
+    contacts = {}
+    for ext, first, last, phone, opening in [
+        ("77202020", "Ahmed", "Hassan Moussa", "77202020", 20000),
+        ("21350001", "Boulangerie La Palmeraie", "", "21350001", 0),
+        ("77990001", "Agent GB Balbala", "", "77990001", 500000),
+    ]:
+        cid = ensure_client(api, ext, first, last, phone, "")
+        contacts[first] = api.get(f"/savingsaccounts/{ensure_savings(api, cid, wallet, opening)}")["accountNo"]
 
     role = ensure_role(api)
-    ensure_app_user(api, a.username, random_fineract_password(), role, "Camille", "Martin", "camille.martin@example.com")
+    ensure_app_user(api, a.username, random_fineract_password(), role, "Fatouma", "Ali Houssein", "fatouma.ali@example.dj")
 
     if a.keycloak_url:
         if not a.keycloak_password:
             sys.exit("--keycloak-password est requis avec --keycloak-url")
         keycloak_user(a.keycloak_url, a.keycloak_admin, a.keycloak_password, a.username, a.password,
-                      "Camille", "Martin", "camille.martin@example.com", camille, not a.no_otp)
+                      "Fatouma", "Ali Houssein", "fatouma.ali@example.dj", fatouma, not a.no_otp)
 
-    lucas_no = api.get(f"/savingsaccounts/{lucas_cc}")["accountNo"]
-    cc_no = api.get(f"/savingsaccounts/{cc}")["accountNo"]
-    print(json.dumps({"clientId": camille, "compteCourant": cc_no, "beneficiaireLucas": lucas_no}, indent=2))
+    print(json.dumps({
+        "clientId": fatouma,
+        "identifiant": a.username,
+        "portefeuille": api.get(f"/savingsaccounts/{wallet_id}")["accountNo"],
+        "contacts": contacts,
+    }, indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":

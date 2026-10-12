@@ -1,4 +1,7 @@
-# GodaFret Banque — serveur (Ubuntu Server)
+# Golden Bridge Bank — serveur et console des agences (Ubuntu Server)
+
+Côté banque : **Golden Bridge Bank** (Fineract + console Mifos X aux couleurs de la banque +
+connexion Keycloak). Côté clients : l'application mobile **Golden Bridge Pay** (`../mobile`).
 
 Pile recommandée : **Apache Fineract** (cœur bancaire) · **Mifos X** (back-office) ·
 **PostgreSQL** · **Keycloak + MFA** · **Caddy** (HTTPS automatique), le tout en Docker Compose.
@@ -33,8 +36,8 @@ au démarrage avec OIDC). Les deux points ont été vérifiés avec l'image `apa
 Pré-requis : Ubuntu Server 22.04/24.04, 4 vCPU, 8 Go de RAM, 3 enregistrements DNS vers le serveur.
 
 ```bash
-sudo git clone https://github.com/obssieh-hash/GodaFret /opt/godafret
-cd /opt/godafret/infra
+sudo git clone https://github.com/obssieh-hash/GodaFret /opt/golden-bridge
+cd /opt/golden-bridge/infra
 sudo ./install-ubuntu.sh       # Docker, pare-feu UFW, fail2ban, mises à jour auto ; crée .env
 sudo nano .env                 # domaines + mots de passe (openssl rand -base64 32)
 sudo ./install-ubuntu.sh       # démarre la pile
@@ -51,9 +54,9 @@ Au premier démarrage Fineract crée la base (2 à 4 min) : `docker compose logs
 2. **Mifos X › Admin › Utilisateurs** : créer un utilisateur du même identifiant, rôle
    **« Client mobile »** (mot de passe aléatoire : la connexion passe par Keycloak).
 3. **Keycloak** (tunnel `ssh -L 8081:localhost:8081 serveur`, puis http://localhost:8081/admin) :
-   royaume `godafret` › Utilisateurs › créer le même identifiant, définir un mot de passe.
+   royaume `goldenbridge` › Utilisateurs › créer le même identifiant, définir un mot de passe.
    Facultatif : attribut `fineract_client_id` = id du client (sinon l'External Id est utilisé).
-4. Le client se connecte une première fois sur `https://auth…/realms/godafret/account` pour
+4. Le client se connecte une première fois sur `https://auth…/realms/goldenbridge/account` pour
    **enregistrer son application d'authentification** (TOTP obligatoire, action par défaut du royaume).
    Ensuite il se connecte dans l'application : mot de passe + code OTP, puis crée son PIN.
 
@@ -69,8 +72,23 @@ python3 scripts/seed_demo.py --fineract http://localhost:8080/fineract-provider/
 (Pour l'exécuter, publiez temporairement le port 8080 de `fineract` sur `127.0.0.1`.)
 
 Rôle « Client mobile » : `READ_CLIENT`, `READ_SAVINGSACCOUNT`, `READ_LOAN`, `READ_LOANPRODUCT`,
-`READ_PAYMENTTYPE`, `READ_ACCOUNTTRANSFER`, `DEPOSIT_SAVINGSACCOUNT`, `WITHDRAWAL_SAVINGSACCOUNT`,
-`CREATE_ACCOUNTTRANSFER`, `CREATE_LOAN`, `REPAYMENT_LOAN`, `CREATE_LOANNOTE`.
+`READ_ACCOUNTTRANSFER`, `CREATE_ACCOUNTTRANSFER`, `CREATE_LOAN`, `CREATE_LOANNOTE`.
+Pas de dépôt ni de retrait direct : un client ne peut pas créditer son propre compte (testé : HTTP 403).
+Les espèces passent par un agent ou le guichet ; envoyer, payer, retirer chez un agent et rembourser
+un prêt sont des virements entre comptes.
+
+## Personnalisation Golden Bridge Bank
+
+| Élément | Fichier |
+|---|---|
+| Logos (clair, foncé, icône) et image d'accueil des agences | `branding/` |
+| Console des agences (Mifos X) : nom, logos, couleurs | `docker-compose.yml` (service `mifos-web-app`) + `branding/mifos-golden-bridge.css` |
+| Page de connexion Keycloak | `keycloak/themes/goldenbridge/` |
+| Royaume, client `gbpay-mobile`, MFA, langue | `keycloak/goldenbridge-realm.json` |
+
+Le royaume est importé au **premier** démarrage seulement. Si vous aviez installé l'ancienne
+version (royaume `godafret`), repartez d'une base vide : `sudo docker compose down -v` puis
+`sudo bash install-local.sh` (⚠️ efface toutes les données).
 
 ## ⚠️ Limite à connaître avant la production
 
@@ -88,7 +106,7 @@ client du jeton, et réservez les dépôts aux canaux réellement encaissés (ag
 | État | `docker compose ps` |
 | Journaux | `docker compose logs -f fineract-mobile` |
 | Mise à jour | `docker compose pull && docker compose up -d` |
-| Sauvegarde | `./backup.sh` (cron conseillé : `30 2 * * *`), copiez `/var/backups/godafret` hors du serveur |
+| Sauvegarde | `./backup.sh` (cron conseillé : `30 2 * * *`), copiez `/var/backups/golden-bridge` hors du serveur |
 | Restauration | `docker compose exec -T postgres pg_restore -U postgres -d <base> --clean < fichier.dump` |
 
 ## Tester toute la chaîne en local

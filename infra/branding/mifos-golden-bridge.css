@@ -1,0 +1,39 @@
+
+/* ---- Golden Bridge Bank : surcouche du back-office Mifos X ---- */
+.cover {
+  background: url(assets/images/gb-cover.png) no-repeat center center !important;
+  background-size: cover !important;
+}
+.cover-title {
+  color: #F5B70A !important;
+  font-weight: 700 !important;
+}
+.cover-description { display: none !important; }
+.cover-content::after {
+  content: "Espace agences : clients, comptes, prêts, opérations de caisse et agents Golden Bridge Pay.";
+  display: block;
+  color: rgba(255, 255, 255, .85);
+  font-size: 22px;
+  line-height: 1.5;
+  margin-top: 12px;
+}
+.mat-toolbar.mat-primary,
+.mat-mdc-toolbar.mat-primary {
+  background: #0A1F44 !important;
+  color: #fff !important;
+}
+.mat-mdc-raised-button.mat-primary:not(:disabled),
+.mat-raised-button.mat-primary:not([disabled]),
+.mat-mdc-unelevated-button.mat-primary:not(:disabled),
+.mat-flat-button.mat-primary:not([disabled]) {
+  background-color: #173A7A !important;
+  color: #fff !important;
+}
+.mat-tab-nav-bar.mat-background-primary .mat-tab-link-container,
+.mat-tab-nav-bar.mat-background-primary .mat-tab-header-pagination,
+.mat-tab-nav-bar.mat-background-primary {
+  background-color: #0A1F44 !important;
+}
+.mat-tab-nav-bar.mat-primary .mat-ink-bar {
+  background-color: #F5B70A !important;
+}

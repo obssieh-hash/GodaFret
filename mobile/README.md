@@ -1,28 +1,28 @@
-# GodaFret Banque — application mobile Flutter
+# Golden Bridge Pay — application mobile (Flutter)
 
-Application bancaire mobile (Android, iOS, web) branchée sur **Apache Fineract**, avec
-authentification **Keycloak + MFA (TOTP)** et code PIN local.
+Le portefeuille mobile des clients de **Golden Bridge Bank**, branché sur **Apache Fineract**,
+avec connexion **Keycloak + MFA (TOTP)** puis code PIN. Montants en **francs Djibouti (Fdj)**.
 
-| Fonction | Écran | API Fineract |
+| Accueil | Ce que ça fait | API Fineract |
 |---|---|---|
-| 🔐 Connexion + PIN | Connexion → OTP → création du PIN, verrouillage auto, biométrie | Keycloak `/token` |
-| 🔑 MFA / OTP | Code TOTP (Keycloak) ou code e-mail/SMS (2FA Fineract) | `/twofactor` |
-| 👤 Profil | Identité, agence, préférences, thème clair/sombre | `GET /clients/{id}` |
-| 💰 Solde | Accueil, Comptes, détail d'un compte | `GET /clients/{id}/accounts`, `/savingsaccounts/{id}` |
-| ➕ Dépôt / ➖ Retrait | Montant, compte, moyen de paiement (retrait validé par PIN) | `POST /savingsaccounts/{id}/transactions` |
-| 💸 Transfert interne | Vers mes comptes ou un bénéficiaire (n° de compte vérifié) | `GET /search`, `POST /accounttransfers` |
-| 💳 Demande de prêt | Produit, curseurs montant/durée, simulation en direct | `POST /loans?command=calculateLoanSchedule`, `POST /loans` |
-| 📅 Échéancier | Anneau de progression, échéances payées / à venir / en retard | `GET /loans/{id}?associations=repaymentSchedule` |
-| 💵 Remboursement | Échéance, impayés ou solde total (validé par PIN) | `POST /loans/{id}/transactions?command=repayment` |
-| 📜 Historique | Groupé par jour, recherche, filtres | transactions épargne + prêts |
-| 🔔 Notifications | Non lues, « tout lire » | `GET/PUT /notifications` |
-| 📊 Tableau de bord | Solde total, encours, flux 6 mois, taux d'épargne, prochaine échéance | — |
+| 🔐 Connexion | n° de téléphone + mot de passe → code OTP → création du PIN ; ensuite PIN ou biométrie | Keycloak `/token` |
+| 💰 Solde | solde disponible du portefeuille, masquable ; « Mes comptes » si plusieurs | `GET /clients/{id}/accounts` |
+| 💸 Envoyer | vers un **n° de téléphone** (ou n° de compte), validé par PIN, reçu | `GET /search`, `POST /accounttransfers` |
+| 🏪 Payer | paiement d'un marchand par son numéro | `POST /accounttransfers` |
+| 📥 Recevoir | mon numéro + **QR code** à montrer | — |
+| ➖ Retrait | retrait d'espèces **chez un agent** (virement vers l'agent qui remet le cash) | `POST /accounttransfers` |
+| ➕ Dépôt | dépôt d'espèces chez un agent ou en agence (QR code / numéro) | fait par l'agent |
+| 💳 Prêts | demande avec simulation, 📅 échéancier | `POST /loans?command=calculateLoanSchedule`, `POST /loans` |
+| 💵 Rembourser | depuis le portefeuille | `POST /accounttransfers` (vers le prêt) |
+| 📜 Historique · 🔔 Notifications · 👤 Profil · 🔑 Sécurité | | |
+
+Navigation : 3 onglets (Accueil, Historique, Profil).
 
 ## Lancer en mode démo (sans serveur)
 
 ```bash
 flutter pub get
-flutter run                 # identifiant/mot de passe quelconques, code OTP 123456
+flutter run                 # n'importe quel numéro/mot de passe, code OTP 123456
 ```
 
 ## Brancher sur votre serveur
@@ -30,9 +30,9 @@ flutter run                 # identifiant/mot de passe quelconques, code OTP 123
 ```bash
 flutter run --release \
   --dart-define=AUTH_MODE=keycloak \
-  --dart-define=FINERACT_URL=https://api.banque.example.com/fineract-provider/api/v1 \
-  --dart-define=KEYCLOAK_URL=https://auth.banque.example.com \
-  --dart-define=KEYCLOAK_REALM=godafret
+  --dart-define=FINERACT_URL=https://api.goldenbridge.dj/fineract-provider/api/v1 \
+  --dart-define=KEYCLOAK_URL=https://auth.goldenbridge.dj \
+  --dart-define=KEYCLOAK_REALM=goldenbridge
 ```
 
 | Variable | Défaut | Rôle |
@@ -40,7 +40,8 @@ flutter run --release \
 | `AUTH_MODE` | `demo` | `demo`, `keycloak` (recommandé) ou `fineract` (Basic + 2FA Fineract) |
 | `FINERACT_URL` | `http://localhost:8082/...` | API de l'instance Fineract « mobile » |
 | `FINERACT_TENANT` | `default` | tenant Fineract |
-| `KEYCLOAK_URL`, `KEYCLOAK_REALM`, `KEYCLOAK_CLIENT_ID` | `…:8081`, `godafret`, `godafret-mobile` | Keycloak |
+| `KEYCLOAK_URL`, `KEYCLOAK_REALM`, `KEYCLOAK_CLIENT_ID` | `…:8081`, `goldenbridge`, `gbpay-mobile` | Keycloak |
+| `CURRENCY` | `DJF` | devise affichée par défaut |
 | `MFA_REQUIRED` | `true` | affiche l'étape OTP |
 | `LOCK_AFTER_SECONDS` | `60` | verrouillage après passage en arrière-plan |
 | `ALLOW_SELF_SIGNED` | `false` | certificat auto-signé accepté **en debug uniquement** |

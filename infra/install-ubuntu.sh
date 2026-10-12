@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installation de GodaFret Banque sur Ubuntu Server 22.04 / 24.04.
+# Installation de Golden Bridge Bank sur Ubuntu Server 22.04 / 24.04.
 # Usage : sudo ./install-ubuntu.sh
 set -euo pipefail
 
@@ -66,5 +66,5 @@ echo
 set -a; . ./.env; set +a
 echo "  API mobile    : https://${BANK_API_DOMAIN}/fineract-provider/api/v1"
 echo "  Mifos X       : https://${ADMIN_DOMAIN}  (utilisateur mifos / password — À CHANGER IMMÉDIATEMENT)"
-echo "  Keycloak      : https://${AUTH_DOMAIN}/realms/godafret/account"
+echo "  Keycloak      : https://${AUTH_DOMAIN}/realms/goldenbridge/account"
 echo "  Admin Keycloak: tunnel SSH  ssh -L 8081:localhost:8081 <serveur>  puis http://localhost:8081/admin"

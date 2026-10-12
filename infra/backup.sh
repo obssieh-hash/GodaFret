@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Sauvegarde quotidienne des bases PostgreSQL (Fineract + Keycloak).
-# Crontab : 30 2 * * * /opt/godafret/infra/backup.sh >> /var/log/godafret-backup.log 2>&1
+# Crontab : 30 2 * * * /opt/golden-bridge/infra/backup.sh >> /var/log/golden-bridge-backup.log 2>&1
 set -euo pipefail
 cd "$(dirname "$0")"
 
-DEST=${BACKUP_DIR:-/var/backups/godafret}
+DEST=${BACKUP_DIR:-/var/backups/golden-bridge}
 KEEP_DAYS=${KEEP_DAYS:-14}
 STAMP=$(date +%Y%m%d-%H%M%S)
 mkdir -p "$DEST"
