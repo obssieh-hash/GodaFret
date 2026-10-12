@@ -7,9 +7,9 @@ import '../../../core/formatters.dart';
 import '../../../core/theme.dart';
 import '../../../models/models.dart';
 import '../../../state/bank_controller.dart';
+import '../../widgets/amount_keypad.dart';
 import '../../widgets/common.dart';
 import '../../widgets/confirm.dart';
-import '../operations/account_picker.dart';
 
 /// Les trois usages d'un même parcours « vers un autre compte Golden Bridge ».
 enum SendMode { send, merchant, agent }
@@ -19,6 +19,11 @@ extension on SendMode {
         SendMode.send => "Envoyer de l'argent",
         SendMode.merchant => 'Payer un marchand',
         SendMode.agent => 'Retrait chez un agent',
+      };
+  String get question => switch (this) {
+        SendMode.send => 'À qui envoyez-vous ?',
+        SendMode.merchant => 'Quel marchand payez-vous ?',
+        SendMode.agent => 'Chez quel agent retirez-vous ?',
       };
   String get fieldLabel => switch (this) {
         SendMode.send => 'Numéro du destinataire',
@@ -30,16 +35,6 @@ extension on SendMode {
         SendMode.merchant => 'Payer',
         SendMode.agent => 'Retirer',
       };
-  IconData get icon => switch (this) {
-        SendMode.send => Icons.send_rounded,
-        SendMode.merchant => Icons.storefront_rounded,
-        SendMode.agent => Icons.payments_outlined,
-      };
-  Color get color => switch (this) {
-        SendMode.send => AppColors.violet,
-        SendMode.merchant => AppColors.teal,
-        SendMode.agent => AppColors.amber,
-      };
   String label(String name) => switch (this) {
         SendMode.send => 'Envoi à $name',
         SendMode.merchant => 'Paiement $name',
@@ -47,7 +42,8 @@ extension on SendMode {
       };
 }
 
-/// 💸 Envoyer / payer / retirer chez un agent : numéro → montant → PIN → reçu.
+/// 💸 Envoyer / payer / retirer chez un agent :
+/// 1. numéro du destinataire, 2. montant au pavé numérique, 3. PIN, 4. reçu.
 class SendScreen extends StatefulWidget {
   const SendScreen({super.key, this.mode = SendMode.send, this.prefill});
 
@@ -59,10 +55,9 @@ class SendScreen extends StatefulWidget {
 }
 
 class _SendScreenState extends State<SendScreen> {
-  final _form = GlobalKey<FormState>();
   late final _number = TextEditingController(text: widget.prefill ?? '');
-  final _amount = TextEditingController();
   final _note = TextEditingController();
+  String _amount = '';
   SavingsAccount? _from;
   Beneficiary? _to;
   bool _searching = false;
@@ -70,6 +65,7 @@ class _SendScreenState extends State<SendScreen> {
   String? _error;
 
   SendMode get mode => widget.mode;
+  double get _value => double.tryParse(_amount) ?? 0;
 
   @override
   void initState() {
@@ -81,7 +77,6 @@ class _SendScreenState extends State<SendScreen> {
   @override
   void dispose() {
     _number.dispose();
-    _amount.dispose();
     _note.dispose();
     super.dispose();
   }
@@ -93,11 +88,15 @@ class _SendScreenState extends State<SendScreen> {
     setState(() {
       _searching = true;
       _error = null;
-      _to = null;
     });
     try {
       final b = await context.read<BankController>().repo.findRecipient(q);
-      if (mounted) setState(() => _to = b);
+      if (!mounted) return;
+      if (b.accountId == _from?.id) {
+        setState(() => _error = 'Vous ne pouvez pas vous envoyer de l\'argent sur le même compte.');
+      } else {
+        setState(() => _to = b);
+      }
     } catch (e) {
       if (mounted) setState(() => _error = '$e');
     } finally {
@@ -105,21 +104,31 @@ class _SendScreenState extends State<SendScreen> {
     }
   }
 
+  void _key(String k) {
+    final next = (_amount + k).replaceFirst(RegExp(r'^0+'), '');
+    if (next.length > 9) return;
+    setState(() {
+      _amount = next;
+      _error = null;
+    });
+  }
+
+  void _delete() {
+    if (_amount.isEmpty) return;
+    setState(() => _amount = _amount.substring(0, _amount.length - 1));
+  }
+
   Future<void> _submit() async {
     final from = _from;
     final to = _to;
-    if (to == null) {
-      await _lookup();
+    if (from == null || to == null || _value <= 0) return;
+    if (_value > from.available) {
+      setState(() => _error = 'Solde insuffisant (${Fmt.money(from.available, currency: from.currency)}).');
       return;
     }
-    if (from == null || !_form.currentState!.validate()) return;
-    if (to.accountId == from.id) {
-      setState(() => _error = 'Vous ne pouvez pas vous envoyer de l\'argent sur le même compte.');
-      return;
-    }
-    final amount = AmountField.parse(_amount.text)!;
+    final amount = _value;
     final money = Fmt.money(amount, currency: from.currency);
-    final ok = await confirmWithPin(context, title: '${mode.action} $money', summary: '${mode.label(to.clientName)}\nFrais : 0 Fdj');
+    final ok = await confirmWithPin(context, title: '${mode.action} $money', summary: '${mode.label(to.clientName)}\nSans frais');
     if (!ok || !mounted) return;
 
     setState(() {
@@ -140,14 +149,15 @@ class _SendScreenState extends State<SendScreen> {
           SendMode.merchant => 'Paiement effectué',
           SendMode.agent => 'Retrait validé',
         },
+        amount: money,
         message: mode == SendMode.agent
-            ? "Montrez cet écran à l'agent : il vous remet $money en espèces."
-            : '${to.clientName} a reçu $money instantanément.',
+            ? "Montrez cet écran à l'agent : il vous remet les espèces."
+            : 'à ${to.clientName}',
         details: [
-          ('Montant', money),
           (mode == SendMode.send ? 'Destinataire' : (mode == SendMode.merchant ? 'Marchand' : 'Agent'), to.clientName),
           if (to.phone != null) ('Numéro', Fmt.phone(to.phone)),
-          ('Frais', '0 Fdj'),
+          ('Depuis', from.productName),
+          ('Frais', '0 ${Fmt.symbol(from.currency)}'),
           ('Date', Fmt.date(DateTime.now())),
         ],
       );
@@ -160,156 +170,173 @@ class _SendScreenState extends State<SendScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bank = context.watch<BankController>();
-    final scheme = Theme.of(context).colorScheme;
-    final currency = _from?.currency ?? bank.currency;
     return Scaffold(
-      appBar: AppBar(title: Text(mode.title)),
-      body: Form(
-        key: _form,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
-          children: [
-            // 1. Destinataire
-            TextField(
-              controller: _number,
-              keyboardType: TextInputType.phone,
-              textInputAction: TextInputAction.search,
-              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9 +]'))],
-              onSubmitted: (_) => _lookup(),
-              onChanged: (_) {
-                if (_to != null) setState(() => _to = null);
-              },
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, letterSpacing: 1),
-              decoration: InputDecoration(
-                labelText: mode.fieldLabel,
-                hintText: '77 00 00 00',
-                prefixIcon: Icon(mode.icon, color: mode.color),
-                prefixText: '${Brand.phonePrefix} ',
-                helperText: 'Ou numéro de compte Golden Bridge',
-                suffixIcon: _searching
-                    ? const Padding(
-                        padding: EdgeInsets.all(14),
-                        child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
-                      )
-                    : IconButton(tooltip: 'Vérifier', onPressed: _lookup, icon: const Icon(Icons.arrow_forward_rounded)),
+      appBar: AppBar(
+        title: Text(mode.title),
+        leading: _to == null
+            ? null
+            : IconButton(
+                tooltip: 'Retour',
+                icon: const Icon(Icons.arrow_back_rounded),
+                onPressed: () => setState(() {
+                  _to = null;
+                  _amount = '';
+                }),
               ),
+      ),
+      body: SafeArea(top: false, child: _to == null ? _recipientStep(context) : _amountStep(context)),
+    );
+  }
+
+  // Étape 1 : destinataire
+  Widget _recipientStep(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(mode.question, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700, letterSpacing: -0.6)),
+          const SizedBox(height: 20),
+          TextField(
+            controller: _number,
+            autofocus: widget.prefill == null,
+            keyboardType: TextInputType.phone,
+            textInputAction: TextInputAction.search,
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9 +]'))],
+            onSubmitted: (_) => _lookup(),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, letterSpacing: 0.5),
+            decoration: InputDecoration(
+              labelText: mode.fieldLabel,
+              hintText: '77 00 00 00',
+              prefixText: '${Brand.phonePrefix}  ',
+              helperText: 'Ou numéro de compte Golden Bridge',
             ),
-            if (_to != null) ...[
-              const SizedBox(height: 12),
-              _RecipientCard(recipient: _to!, mode: mode),
-            ],
-            if (_to != null) ...[
-              const SizedBox(height: 22),
-              // 2. Montant
-              AmountField(
-                controller: _amount,
-                currency: currency,
-                autofocus: true,
-                validator: (v) {
-                  final a = AmountField.parse(v);
-                  if (a == null || a <= 0) return 'Saisissez un montant';
-                  if (_from != null && a > _from!.available) {
-                    return 'Solde insuffisant (${Fmt.money(_from!.available, currency: currency)})';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 8,
-                runSpacing: 6,
-                children: [
-                  for (final v in const [1000, 2000, 5000, 10000, 20000])
-                    ActionChip(
-                      label: Text(Fmt.money(v, currency: currency)),
-                      onPressed: () => _amount.text = '$v',
-                    ),
-                ],
-              ),
-              const SizedBox(height: 18),
-              if (bank.savings.length > 1)
-                AccountPicker(
-                  label: 'Depuis',
-                  accounts: bank.savings,
-                  selected: _from,
-                  hidden: bank.balanceHidden,
-                  onChanged: (a) => setState(() => _from = a),
-                )
-              else if (_from != null)
-                Text(
-                  'Depuis ${_from!.productName} · solde ${bank.balanceHidden ? '•••' : Fmt.money(_from!.available, currency: currency)}',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: scheme.onSurfaceVariant),
-                ),
-              if (mode == SendMode.send) ...[
-                const SizedBox(height: 14),
-                TextField(
-                  controller: _note,
-                  maxLength: 60,
-                  decoration: const InputDecoration(labelText: 'Motif (facultatif)', prefixIcon: Icon(Icons.short_text_rounded)),
-                ),
-              ],
-              if (mode == SendMode.agent) ...[
-                const SizedBox(height: 14),
-                const InfoBanner(
-                  "Validez le retrait devant l'agent : il vous remet les espèces dès qu'il voit le reçu.",
-                  icon: Icons.storefront_outlined,
-                ),
-              ],
-            ],
-            if (_error != null) ...[const SizedBox(height: 14), ErrorBanner(_error!)],
-            const SizedBox(height: 22),
-            PrimaryButton(
-              label: _to == null ? 'Vérifier le numéro' : mode.action,
-              icon: _to == null ? Icons.search_rounded : mode.icon,
-              loading: _sending || _searching,
-              onPressed: _submit,
+          ),
+          if (_error != null) ...[const SizedBox(height: 14), ErrorBanner(_error!)],
+          const Spacer(),
+          if (mode == SendMode.agent)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 14),
+              child: InfoBanner("Validez le retrait devant l'agent : il vous remet les espèces dès qu'il voit le reçu."),
             ),
-          ],
-        ),
+          PrimaryButton(label: 'Continuer', loading: _searching, onPressed: _lookup),
+        ],
       ),
     );
   }
-}
 
-class _RecipientCard extends StatelessWidget {
-  const _RecipientCard({required this.recipient, required this.mode});
-  final Beneficiary recipient;
-  final SendMode mode;
-
-  @override
-  Widget build(BuildContext context) {
+  // Étape 2 : montant
+  Widget _amountStep(BuildContext context) {
+    final bank = context.watch<BankController>();
     final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.green.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.green.withValues(alpha: 0.35)),
-      ),
-      child: Row(
-        children: [
-          Avatar(recipient.clientName, size: 46),
-          const SizedBox(width: 12),
-          Expanded(
+    final to = _to!;
+    final from = _from;
+    final currency = from?.currency ?? bank.currency;
+    final symbol = Fmt.symbol(currency);
+    final shown = _value == 0 ? '0' : Fmt.money(_value, currency: currency).replaceAll(symbol, '').trim();
+    final tooMuch = from != null && _value > from.available;
+
+    return Column(
+      children: [
+        const SizedBox(height: 4),
+        Avatar(to.clientName, size: 52),
+        const SizedBox(height: 8),
+        Text(to.clientName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+        if (to.phone != null)
+          Text('${Brand.phonePrefix} ${Fmt.phone(to.phone)}', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13)),
+        Expanded(
+          child: Center(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(recipient.clientName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15.5)),
-                Text(
-                  [
-                    if (recipient.phone != null) Fmt.phone(recipient.phone),
-                    'Compte ${Fmt.maskAccount(recipient.accountNo)}',
-                  ].join(' · '),
-                  style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text.rich(
+                    TextSpan(children: [
+                      TextSpan(text: shown),
+                      TextSpan(text: ' $symbol', style: TextStyle(fontSize: 26, color: scheme.onSurfaceVariant)),
+                    ]),
+                    semanticsLabel: 'Montant $shown $symbol',
+                    style: TextStyle(
+                      fontSize: 52,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -1.5,
+                      color: tooMuch ? AppColors.red : (_value == 0 ? scheme.onSurfaceVariant : scheme.onSurface),
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
                 ),
+                const SizedBox(height: 10),
+                if (bank.savings.length > 1)
+                  TextButton.icon(
+                    onPressed: () => _pickAccount(context, bank),
+                    icon: const Icon(Icons.account_balance_wallet_outlined, size: 18),
+                    label: Text(
+                      '${from?.productName ?? ''} · ${bank.balanceHidden ? '•••' : Fmt.money(from?.available ?? 0, currency: currency)}',
+                    ),
+                  )
+                else
+                  Text(
+                    'Solde : ${bank.balanceHidden ? '•••' : Fmt.money(from?.available ?? 0, currency: currency)}',
+                    style: TextStyle(color: tooMuch ? AppColors.red : scheme.onSurfaceVariant),
+                  ),
               ],
             ),
           ),
-          const Icon(Icons.verified_rounded, color: AppColors.green),
-        ],
+        ),
+        if (mode == SendMode.send)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: TextField(
+              controller: _note,
+              maxLength: 60,
+              decoration: const InputDecoration(hintText: 'Ajouter un motif (facultatif)', counterText: ''),
+            ),
+          ),
+        if (_error != null) Padding(padding: const EdgeInsets.fromLTRB(20, 10, 20, 0), child: ErrorBanner(_error!)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          child: AmountKeypad(
+            onKey: _key,
+            onDelete: _delete,
+            extraKey: Fmt.decimals(currency) == 0 ? '000' : '00',
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+          child: PrimaryButton(
+            label: _value == 0 ? mode.action : '${mode.action} ${Fmt.money(_value, currency: currency)}',
+            loading: _sending,
+            onPressed: _value == 0 || tooMuch ? null : _submit,
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _pickAccount(BuildContext context, BankController bank) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final a in bank.savings)
+              ListTile(
+                leading: const IconBadge(Icons.account_balance_wallet_outlined),
+                title: Text(a.productName, style: const TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Text(Fmt.maskAccount(a.accountNo)),
+                trailing: a.id == _from?.id
+                    ? const Icon(Icons.check_rounded)
+                    : MoneyText(a.available, currency: a.currency, hidden: bank.balanceHidden),
+                onTap: () {
+                  setState(() => _from = a);
+                  Navigator.pop(ctx);
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }

@@ -88,33 +88,31 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
         child: Column(
           children: [
             const Spacer(),
-            const BrandLogo(size: 56),
+            const BrandLogo(size: 52),
             const SizedBox(height: 22),
             Text(
               _confirming ? 'Confirmez votre code' : (widget.changing ? 'Nouveau code PIN' : 'Créez votre code PIN'),
-              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800),
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, letterSpacing: -0.4),
             ),
             const SizedBox(height: 8),
             Text(
               _message ?? 'Ce code à 6 chiffres protège l\'accès à l\'application et valide vos opérations.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: _error ? const Color(0xFFFF8FA3) : Colors.white60, height: 1.4),
+              style: TextStyle(color: _error ? AppColors.red : Theme.of(context).colorScheme.onSurfaceVariant, height: 1.4),
             ),
             const SizedBox(height: 30),
-            PinDots(length: PinService.pinLength, filled: _pin.length, error: _error, color: Colors.white),
+            PinDots(length: PinService.pinLength, filled: _pin.length, error: _error),
             const Spacer(),
             if (!widget.changing && session.biometricsAvailable)
               SwitchListTile(
                 value: _bio,
                 onChanged: (v) => setState(() => _bio = v),
-                activeThumbColor: AppColors.teal,
-                title: const Text('Activer Face ID / empreinte', style: TextStyle(color: Colors.white)),
-                secondary: const Icon(Icons.fingerprint_rounded, color: Colors.white70),
+                title: const Text('Activer Face ID / empreinte'),
+                secondary: const Icon(Icons.fingerprint_rounded),
               ),
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 380),
               child: PinPad(
-                foreground: Colors.white,
                 onDigit: _digit,
                 onDelete: () => setState(() => _pin = _pin.isEmpty ? '' : _pin.substring(0, _pin.length - 1)),
               ),
@@ -167,32 +165,30 @@ class _PinLockScreenState extends State<PinLockScreen> {
         child: Column(
           children: [
             const Spacer(),
-            const BrandLogo(size: 56),
+            const BrandLogo(size: 52),
             const SizedBox(height: 22),
             Text(
               name == null ? 'Bon retour' : 'Bon retour, $name',
-              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800),
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, letterSpacing: -0.4),
             ),
             const SizedBox(height: 8),
             Text(
               session.error ?? 'Saisissez votre code PIN',
               textAlign: TextAlign.center,
-              style: TextStyle(color: session.error != null ? const Color(0xFFFF8FA3) : Colors.white60),
+              style: TextStyle(color: session.error != null ? AppColors.red : Theme.of(context).colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 30),
             session.busy
-                ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
                 : PinDots(
                     length: PinService.pinLength,
                     filled: _pin.length,
                     error: session.error != null && _pin.isEmpty,
-                    color: Colors.white,
                   ),
             const Spacer(),
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 380),
               child: PinPad(
-                foreground: Colors.white,
                 onDigit: _digit,
                 onDelete: () => setState(() => _pin = _pin.isEmpty ? '' : _pin.substring(0, _pin.length - 1)),
                 onBiometrics: session.biometricsEnabled ? session.unlockWithBiometrics : null,
@@ -200,7 +196,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
             ),
             TextButton(
               onPressed: session.logout,
-              child: const Text('Code oublié ? Se reconnecter', style: TextStyle(color: Colors.white70)),
+              child: const Text('Code oublié ? Se reconnecter'),
             ),
             const SizedBox(height: 8),
           ],

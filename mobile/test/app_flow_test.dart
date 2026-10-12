@@ -72,11 +72,10 @@ void main() {
     await typePin(tester, '274913');
     await settle(tester);
 
-    // 📊 Accueil façon portefeuille
+    // 📊 Accueil : solde centré et actions rondes
     expect(session.stage, SessionStage.unlocked);
-    expect(find.textContaining('Fatouma'), findsWidgets);
-    expect(find.text('Solde disponible'), findsOneWidget);
-    for (final action in ['Envoyer', 'Recevoir', 'Payer', 'Retrait', 'Dépôt', 'Prêts', 'Rembourser', 'Historique']) {
+    expect(find.text('Comptes'), findsOneWidget);
+    for (final action in ['Envoyer', 'Recevoir', 'Payer', 'Plus']) {
       expect(find.text(action), findsWidgets, reason: action);
     }
     final before = bank.savings.first.balance;
@@ -89,19 +88,20 @@ void main() {
     Navigator.of(tester.element(find.text('Mon numéro'))).pop();
     await tester.pumpAndSettle();
 
-    // 💸 Envoyer à un numéro de téléphone
+    // 💸 Envoyer : numéro → pavé numérique → PIN → reçu
     await tester.tap(find.text('Envoyer'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, '77 20 20 20');
-    await tester.tap(find.text('Vérifier le numéro'));
+    await tester.tap(find.text('Continuer'));
     await settle(tester);
     expect(find.text('Ahmed Hassan Moussa'), findsOneWidget);
-    await tester.enterText(find.byType(TextFormField).first, '2500');
-    final sendButton = find.widgetWithText(FilledButton, 'Envoyer');
-    await tester.scrollUntilVisible(sendButton, 200, scrollable: find.byType(Scrollable).first);
-    await tester.tap(sendButton);
+    for (final d in ['2', '5', '0', '0']) {
+      await tester.tap(find.text(d).last);
+      await tester.pump();
+    }
+    await tester.tap(find.byType(FilledButton));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Envoyer 2'), findsOneWidget);
+    expect(find.textContaining('Envoyer 2'), findsWidgets);
     await typePin(tester, '274913');
     await settle(tester);
     expect(find.text('Argent envoyé'), findsOneWidget);
@@ -118,10 +118,18 @@ void main() {
     expect(session.stage, SessionStage.unlocked);
 
     // Onglets
-    for (final tab in ['Historique', 'Profil']) {
-      await tester.tap(find.text(tab).last);
-      await tester.pumpAndSettle();
-    }
+    await tester.tap(find.text('Paiements').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Envoyer et payer'), findsOneWidget);
+    await tester.tap(find.text('Prêts').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Demander un prêt'), findsOneWidget);
+    await tester.tap(find.text('Historique').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Accueil').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('FH').first); // avatar (initiales) → profil
+    await tester.pumpAndSettle();
     expect(find.text('Informations personnelles'), findsOneWidget);
   });
 }

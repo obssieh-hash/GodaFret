@@ -3,14 +3,14 @@ import 'package:flutter/material.dart';
 import '../../core/formatters.dart';
 import '../../core/theme.dart';
 
-/// Carte avec dégradé et motifs décoratifs.
+/// Carte de mise en avant (fond bleu nuit, texte blanc). Plate, sans ombre.
 class GradientCard extends StatelessWidget {
   const GradientCard({
     super.key,
     required this.child,
     this.gradient = AppColors.primaryGradient,
-    this.padding = const EdgeInsets.all(22),
-    this.radius = 28,
+    this.padding = const EdgeInsets.all(20),
+    this.radius = 20,
     this.onTap,
   });
 
@@ -22,55 +22,21 @@ class GradientCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = gradient is LinearGradient ? (gradient as LinearGradient).colors : [AppColors.indigo];
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(radius),
-        gradient: gradient,
-        boxShadow: [
-          BoxShadow(
-            color: colors.last.withValues(alpha: 0.35),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(radius),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onTap,
-            child: Stack(
-              children: [
-                Positioned(right: -40, top: -50, child: _Bubble(size: 160, opacity: 0.10)),
-                Positioned(right: 40, bottom: -70, child: _Bubble(size: 130, opacity: 0.07)),
-                Padding(padding: padding, child: child),
-              ],
-            ),
-          ),
-        ),
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(radius),
+      clipBehavior: Clip.antiAlias,
+      child: Ink(
+        decoration: BoxDecoration(gradient: gradient, borderRadius: BorderRadius.circular(radius)),
+        child: InkWell(onTap: onTap, child: Padding(padding: padding, child: child)),
       ),
     );
   }
 }
 
-class _Bubble extends StatelessWidget {
-  const _Bubble({required this.size, required this.opacity});
-  final double size;
-  final double opacity;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: opacity)),
-      );
-}
-
-/// Carte blanche arrondie (surface).
+/// Carte grise claire, sans ombre.
 class SurfaceCard extends StatelessWidget {
-  const SurfaceCard({super.key, required this.child, this.padding = const EdgeInsets.all(18), this.onTap});
+  const SurfaceCard({super.key, required this.child, this.padding = const EdgeInsets.all(16), this.onTap});
 
   final Widget child;
   final EdgeInsets padding;
@@ -78,21 +44,11 @@ class SurfaceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: Theme.of(context).brightness == Brightness.light
-            ? [BoxShadow(color: AppColors.indigo.withValues(alpha: 0.06), blurRadius: 20, offset: const Offset(0, 8))]
-            : null,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(24),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(onTap: onTap, child: Padding(padding: padding, child: child)),
-      ),
+    return Material(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(20),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(onTap: onTap, child: Padding(padding: padding, child: child)),
     );
   }
 }
@@ -107,14 +63,11 @@ class SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 8, 0, 10),
+      padding: const EdgeInsets.fromLTRB(2, 10, 0, 6),
       child: Row(
         children: [
           Expanded(
-            child: Text(
-              title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.2),
-            ),
+            child: Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, letterSpacing: -0.2)),
           ),
           if (action != null) TextButton(onPressed: onAction, child: Text(action!)),
         ],
@@ -123,27 +76,40 @@ class SectionHeader extends StatelessWidget {
   }
 }
 
-/// Icône ronde colorée (pastille).
+/// Pastille ronde monochrome (fond gris, icône encre).
 class IconBadge extends StatelessWidget {
-  const IconBadge(this.icon, {super.key, required this.color, this.size = 44});
+  const IconBadge(this.icon, {super.key, this.color, this.size = 42, this.filled = false});
 
   final IconData icon;
-  final Color color;
+
+  /// Conservé pour compatibilité ; seules les icônes sémantiques le colorent.
+  final Color? color;
   final double size;
 
+  /// Pastille noire, icône blanche (actions principales).
+  final bool filled;
+
   @override
-  Widget build(BuildContext context) => Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.13),
-          borderRadius: BorderRadius.circular(size * 0.36),
-        ),
-        child: Icon(icon, color: color, size: size * 0.5),
-      );
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final semantic = color == AppColors.green || color == AppColors.red || color == AppColors.amber || color == AppColors.gold;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: filled ? scheme.onSurface : (semantic ? color!.withValues(alpha: 0.12) : scheme.surfaceContainerHighest),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        icon,
+        size: size * 0.48,
+        color: filled ? scheme.surface : (semantic ? color : scheme.onSurface),
+      ),
+    );
+  }
 }
 
-/// Montant qui peut être masqué (••••).
+/// Montant qui peut être masqué.
 class MoneyText extends StatelessWidget {
   const MoneyText(
     this.amount, {
@@ -164,34 +130,54 @@ class MoneyText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = colored ? (amount >= 0 ? AppColors.green : null) : null;
+    // Style Revolut : seuls les crédits sont en vert ; un débit n'a pas de signe « + ».
+    final positive = amount >= 0;
+    final color = colored && positive ? AppColors.green : style?.color;
+    final text = hidden
+        ? '•••••'
+        : (signed && positive ? '+${Fmt.money(amount, currency: currency)}' : Fmt.money(amount, currency: currency));
     return Text(
-      hidden ? '• • • • •' : Fmt.money(amount, currency: currency, signed: signed),
-      style: (style ?? const TextStyle()).copyWith(
-        color: color ?? style?.color,
-        fontFeatures: const [FontFeature.tabularFigures()],
-      ),
+      text,
+      style: (style ?? const TextStyle()).copyWith(color: color, fontFeatures: const [FontFeature.tabularFigures()]),
     );
   }
 }
 
+/// Avatar à initiales, couleur stable déduite du nom.
 class Avatar extends StatelessWidget {
-  const Avatar(this.name, {super.key, this.size = 46});
+  const Avatar(this.name, {super.key, this.size = 44, this.icon});
 
   final String name;
   final double size;
+  final IconData? icon;
+
+  static const _palette = [
+    Color(0xFFE8ECF5),
+    Color(0xFFFFF1CC),
+    Color(0xFFE3F4EC),
+    Color(0xFFF7E6E6),
+    Color(0xFFEDE7F6),
+    Color(0xFFE6F1F8),
+  ];
 
   @override
-  Widget build(BuildContext context) => Container(
-        width: size,
-        height: size,
-        alignment: Alignment.center,
-        decoration: const BoxDecoration(shape: BoxShape.circle, gradient: AppColors.sunsetGradient),
-        child: Text(
-          Fmt.initials(name),
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: size * 0.36),
-        ),
-      );
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final bg = dark ? const Color(0xFF24262C) : _palette[name.codeUnits.fold<int>(0, (a, b) => a + b) % _palette.length];
+    final fg = Theme.of(context).colorScheme.onSurface;
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(shape: BoxShape.circle, color: bg),
+      child: icon != null
+          ? Icon(icon, size: size * 0.46, color: fg)
+          : Text(
+              Fmt.initials(name),
+              style: TextStyle(color: fg, fontWeight: FontWeight.w600, fontSize: size * 0.36),
+            ),
+    );
+  }
 }
 
 class EmptyState extends StatelessWidget {
@@ -206,18 +192,13 @@ class EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+      padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 84,
-            height: 84,
-            decoration: BoxDecoration(color: scheme.primary.withValues(alpha: 0.09), shape: BoxShape.circle),
-            child: Icon(icon, size: 38, color: scheme.primary),
-          ),
-          const SizedBox(height: 18),
-          Text(title, textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+          Icon(icon, size: 36, color: scheme.onSurfaceVariant),
+          const SizedBox(height: 14),
+          Text(title, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
           if (message != null) ...[
             const SizedBox(height: 6),
             Text(message!, textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant)),
@@ -237,15 +218,15 @@ class ErrorBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
         decoration: BoxDecoration(
-          color: AppColors.red.withValues(alpha: 0.09),
-          borderRadius: BorderRadius.circular(18),
+          color: AppColors.red.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(14),
         ),
         child: Row(
           children: [
-            const Icon(Icons.error_outline_rounded, color: AppColors.red),
-            const SizedBox(width: 12),
+            const Icon(Icons.error_outline_rounded, color: AppColors.red, size: 20),
+            const SizedBox(width: 10),
             Expanded(child: Text(message, style: const TextStyle(color: AppColors.red, fontWeight: FontWeight.w500))),
             if (onRetry != null) TextButton(onPressed: onRetry, child: const Text('Réessayer')),
           ],
@@ -254,28 +235,31 @@ class ErrorBanner extends StatelessWidget {
 }
 
 class InfoBanner extends StatelessWidget {
-  const InfoBanner(this.message, {super.key, this.icon = Icons.info_outline_rounded, this.color = AppColors.sky});
+  const InfoBanner(this.message, {super.key, this.icon = Icons.info_outline_rounded, this.color});
 
   final String message;
   final IconData icon;
-  final Color color;
+  final Color? color;
 
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: color.withValues(alpha: 0.10), borderRadius: BorderRadius.circular(18)),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(width: 10),
-            Expanded(child: Text(message, style: TextStyle(color: color, fontWeight: FontWeight.w500, height: 1.35))),
-          ],
-        ),
-      );
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: scheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(14)),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: scheme.onSurfaceVariant, size: 20),
+          const SizedBox(width: 10),
+          Expanded(child: Text(message, style: TextStyle(color: scheme.onSurfaceVariant, height: 1.4))),
+        ],
+      ),
+    );
+  }
 }
 
-/// Bouton principal avec indicateur de chargement.
+/// Bouton principal : pilule noire.
 class PrimaryButton extends StatelessWidget {
   const PrimaryButton({
     super.key,
@@ -291,14 +275,16 @@ class PrimaryButton extends StatelessWidget {
   final bool loading;
   final IconData? icon;
 
-  /// Bouton posé sur un fond sombre (écrans de connexion).
+  /// Sur fond sombre : pilule blanche.
   final bool onDark;
 
   @override
   Widget build(BuildContext context) => FilledButton(
         style: onDark
             ? FilledButton.styleFrom(
-                disabledBackgroundColor: Colors.white.withValues(alpha: 0.10),
+                backgroundColor: Colors.white,
+                foregroundColor: AppColors.ink,
+                disabledBackgroundColor: Colors.white.withValues(alpha: 0.12),
                 disabledForegroundColor: Colors.white38,
               )
             : null,
@@ -306,11 +292,18 @@ class PrimaryButton extends StatelessWidget {
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 200),
           child: loading
-              ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white))
+              ? SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.2,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                )
               : Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (icon != null) ...[Icon(icon, size: 20), const SizedBox(width: 8)],
+                    if (icon != null) ...[Icon(icon, size: 19), const SizedBox(width: 8)],
                     Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
                   ],
                 ),
@@ -329,15 +322,16 @@ class KeyValueRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 7),
+        padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
           children: [
-            Expanded(child: Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))),
-            Flexible(
+            Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+            const SizedBox(width: 12),
+            Expanded(
               child: Text(
                 value,
                 textAlign: TextAlign.end,
-                style: TextStyle(fontWeight: bold ? FontWeight.w800 : FontWeight.w600, color: valueColor),
+                style: TextStyle(fontWeight: bold ? FontWeight.w700 : FontWeight.w500, color: valueColor),
               ),
             ),
           ],
@@ -345,7 +339,7 @@ class KeyValueRow extends StatelessWidget {
       );
 }
 
-/// Champ de saisie d'un montant, en grand.
+/// Champ de saisie d'un montant, en grand (utilisé pour les prêts).
 class AmountField extends StatelessWidget {
   const AmountField({super.key, required this.controller, this.currency = 'DJF', this.validator, this.autofocus = false});
 
@@ -359,23 +353,26 @@ class AmountField extends StatelessWidget {
       Fmt.decimals(currency) == 0 ? '${value.ceil()}' : value.toStringAsFixed(2).replaceAll('.', ',');
 
   static double? parse(String? text) =>
-      double.tryParse((text ?? '').replaceAll(RegExp(r'[\s\u00a0\u202f]'), '').replaceAll(',', '.'));
+      double.tryParse((text ?? '').replaceAll(RegExp(r'[\s  ]'), '').replaceAll(',', '.'));
 
   @override
   Widget build(BuildContext context) {
-    final symbol = Fmt.symbol(currency);
     final noDecimals = Fmt.decimals(currency) == 0;
     return TextFormField(
       controller: controller,
       autofocus: autofocus,
       keyboardType: TextInputType.numberWithOptions(decimal: !noDecimals),
       textAlign: TextAlign.center,
-      style: const TextStyle(fontSize: 38, fontWeight: FontWeight.w800, letterSpacing: -1),
+      style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w700, letterSpacing: -1),
       decoration: InputDecoration(
         hintText: noDecimals ? '0' : '0,00',
-        suffixText: symbol,
-        suffixStyle: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700),
-        contentPadding: const EdgeInsets.symmetric(vertical: 22, horizontal: 18),
+        suffixText: Fmt.symbol(currency),
+        suffixStyle: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+        filled: false,
+        border: InputBorder.none,
+        enabledBorder: InputBorder.none,
+        focusedBorder: InputBorder.none,
+        contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
       ),
       validator: validator ??
           (v) {

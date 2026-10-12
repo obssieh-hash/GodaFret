@@ -18,37 +18,32 @@ class LoansScreen extends StatelessWidget {
     final bank = context.watch<BankController>();
     final loans = bank.loanDetails;
     return Scaffold(
-      appBar: AppBar(title: const Text('Mes prêts')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => push(context, const LoanRequestScreen()),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Demander un prêt'),
-      ),
       body: RefreshIndicator(
         onRefresh: bank.refresh,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 100),
+          padding: EdgeInsets.fromLTRB(16, MediaQuery.paddingOf(context).top + 20, 16, 28),
           children: [
-            GradientCard(
-              gradient: AppColors.sunsetGradient,
+            const Padding(
+              padding: EdgeInsets.fromLTRB(4, 0, 4, 18),
+              child: Text('Prêts', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, letterSpacing: -0.6)),
+            ),
+            SurfaceCard(
               onTap: () => push(context, const LoanRequestScreen()),
               child: const Row(
                 children: [
+                  IconBadge(Icons.add_rounded, filled: true, size: 40),
+                  SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Un projet en tête ?', style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w800)),
-                        SizedBox(height: 6),
-                        Text(
-                          'Simulez votre mensualité et envoyez votre demande en 2 minutes.',
-                          style: TextStyle(color: Colors.white70, height: 1.35),
-                        ),
+                        Text('Demander un prêt', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                        SizedBox(height: 2),
+                        Text('Simulation immédiate, réponse de votre agence'),
                       ],
                     ),
                   ),
-                  SizedBox(width: 12),
-                  Icon(Icons.rocket_launch_rounded, color: Colors.white, size: 44),
+                  Icon(Icons.chevron_right_rounded),
                 ],
               ),
             ),

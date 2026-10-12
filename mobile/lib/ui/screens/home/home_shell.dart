@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../accounts/history_screen.dart';
-import '../profile/profile_screen.dart';
+import '../loans/loans_screen.dart';
 import 'dashboard_screen.dart';
+import 'payments_screen.dart';
 
-/// Navigation principale à 3 onglets (comptes et prêts sont accessibles depuis l'accueil).
+/// Navigation principale : Accueil, Paiements, Prêts, Historique.
+/// Le profil s'ouvre depuis l'avatar en haut de l'accueil.
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 
@@ -20,8 +22,9 @@ class HomeShellState extends State<HomeShell> {
   void go(int index) => setState(() => _index = index);
 
   static const tabHome = 0;
-  static const tabHistory = 1;
-  static const tabProfile = 2;
+  static const tabPayments = 1;
+  static const tabLoans = 2;
+  static const tabHistory = 3;
 
   @override
   Widget build(BuildContext context) {
@@ -30,18 +33,33 @@ class HomeShellState extends State<HomeShell> {
         index: _index,
         children: const [
           DashboardScreen(),
+          PaymentsScreen(),
+          LoansScreen(),
           HistoryScreen(),
-          ProfileScreen(),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: go,
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home_rounded), label: 'Accueil'),
-          NavigationDestination(icon: Icon(Icons.receipt_long_outlined), selectedIcon: Icon(Icons.receipt_long_rounded), label: 'Historique'),
-          NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: 'Profil'),
-        ],
+      bottomNavigationBar: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
+        ),
+        child: NavigationBar(
+          selectedIndex: _index,
+          onDestinationSelected: go,
+          destinations: const [
+            NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home_rounded), label: 'Accueil'),
+            NavigationDestination(icon: Icon(Icons.swap_horiz_rounded), label: 'Paiements'),
+            NavigationDestination(
+              icon: Icon(Icons.account_balance_outlined),
+              selectedIcon: Icon(Icons.account_balance_rounded),
+              label: 'Prêts',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.receipt_long_outlined),
+              selectedIcon: Icon(Icons.receipt_long_rounded),
+              label: 'Historique',
+            ),
+          ],
+        ),
       ),
     );
   }

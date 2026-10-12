@@ -71,9 +71,9 @@ class _PinSheetState extends State<_PinSheet> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const IconBadge(Icons.lock_rounded, color: AppColors.indigo, size: 56),
+            const IconBadge(Icons.lock_outline_rounded, size: 52),
             const SizedBox(height: 12),
-            Text(widget.title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+            Text(widget.title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, letterSpacing: -0.3)),
             const SizedBox(height: 4),
             Text(widget.summary, textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
             const SizedBox(height: 22),
@@ -99,21 +99,28 @@ class _PinSheetState extends State<_PinSheet> {
   }
 }
 
-/// Écran de succès animé après une opération.
+/// Écran de confirmation d'une opération (reçu).
 class SuccessScreen extends StatefulWidget {
-  const SuccessScreen({super.key, required this.title, required this.message, this.details = const []});
+  const SuccessScreen({super.key, required this.title, required this.message, this.amount, this.details = const []});
 
   final String title;
   final String message;
+  final String? amount;
   final List<(String, String)> details;
 
-  static Future<void> show(BuildContext context, {required String title, required String message, List<(String, String)> details = const []}) {
+  static Future<void> show(
+    BuildContext context, {
+    required String title,
+    required String message,
+    String? amount,
+    List<(String, String)> details = const [],
+  }) {
     return Navigator.of(context).pushReplacement(
       PageRouteBuilder<void>(
-        transitionDuration: const Duration(milliseconds: 350),
+        transitionDuration: const Duration(milliseconds: 300),
         pageBuilder: (_, a, _) => FadeTransition(
           opacity: a,
-          child: SuccessScreen(title: title, message: message, details: details),
+          child: SuccessScreen(title: title, message: message, amount: amount, details: details),
         ),
       ),
     );
@@ -124,7 +131,7 @@ class SuccessScreen extends StatefulWidget {
 }
 
 class _SuccessScreenState extends State<SuccessScreen> with SingleTickerProviderStateMixin {
-  late final _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 700))..forward();
+  late final _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 500))..forward();
 
   @override
   void dispose() {
@@ -134,71 +141,44 @@ class _SuccessScreenState extends State<SuccessScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(gradient: AppColors.nightGradient),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                const Spacer(),
-                ScaleTransition(
-                  scale: CurvedAnimation(parent: _c, curve: Curves.elasticOut),
-                  child: Container(
-                    width: 120,
-                    height: 120,
-                    decoration: const BoxDecoration(shape: BoxShape.circle, gradient: AppColors.tealGradient),
-                    child: const Icon(Icons.check_rounded, color: Colors.white, size: 68),
-                  ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+          child: Column(
+            children: [
+              const Spacer(),
+              ScaleTransition(
+                scale: CurvedAnimation(parent: _c, curve: Curves.easeOutBack),
+                child: Container(
+                  width: 72,
+                  height: 72,
+                  decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.green),
+                  child: const Icon(Icons.check_rounded, color: Colors.white, size: 40),
                 ),
-                const SizedBox(height: 28),
+              ),
+              const SizedBox(height: 20),
+              Text(widget.title, style: TextStyle(fontSize: 16, color: scheme.onSurfaceVariant, fontWeight: FontWeight.w500)),
+              if (widget.amount != null) ...[
+                const SizedBox(height: 6),
                 Text(
-                  widget.title,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 10),
-                Text(widget.message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70, fontSize: 15, height: 1.4)),
-                if (widget.details.isNotEmpty) ...[
-                  const SizedBox(height: 24),
-                  Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.07),
-                      borderRadius: BorderRadius.circular(22),
-                    ),
-                    child: Column(
-                      children: [
-                        for (final (k, v) in widget.details)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6),
-                            child: Row(
-                              children: [
-                                Text(k, style: const TextStyle(color: Colors.white60)),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    v,
-                                    textAlign: TextAlign.end,
-                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-                const Spacer(),
-                FilledButton(
-                  style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.night),
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Terminé'),
+                  widget.amount!,
+                  style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w700, letterSpacing: -1.2),
                 ),
               ],
-            ),
+              const SizedBox(height: 6),
+              Text(widget.message, textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant, height: 1.4)),
+              if (widget.details.isNotEmpty) ...[
+                const SizedBox(height: 28),
+                SurfaceCard(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Column(children: [for (final (k, v) in widget.details) KeyValueRow(k, v)]),
+                ),
+              ],
+              const Spacer(flex: 2),
+              PrimaryButton(label: 'Terminé', onPressed: () => Navigator.pop(context)),
+            ],
           ),
         ),
       ),

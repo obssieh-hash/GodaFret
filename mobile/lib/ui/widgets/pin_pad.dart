@@ -46,12 +46,12 @@ class _PinDotsState extends State<PinDots> with SingleTickerProviderStateMixin {
           return AnimatedContainer(
             duration: const Duration(milliseconds: 160),
             margin: const EdgeInsets.symmetric(horizontal: 9),
-            width: on ? 18 : 16,
-            height: on ? 18 : 16,
+            width: 14,
+            height: 14,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: widget.error ? Colors.redAccent : (on ? color : Colors.transparent),
-              border: Border.all(color: widget.error ? Colors.redAccent : color.withValues(alpha: 0.55), width: 2),
+              border: Border.all(color: widget.error ? Colors.redAccent : color.withValues(alpha: on ? 1 : 0.35), width: 1.5),
             ),
           );
         }),
@@ -89,10 +89,10 @@ class PinPad extends StatelessWidget {
                 excludeSemantics: true,
                 onTap: onTap,
                 child: Material(
-                  color: onTap == null ? Colors.transparent : fg.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(22),
+                  color: Colors.transparent,
+                  shape: const CircleBorder(),
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(22),
+                    customBorder: const CircleBorder(),
                     onTap: onTap == null
                         ? null
                         : () {
@@ -108,7 +108,7 @@ class PinPad extends StatelessWidget {
         );
 
     Widget digit(String d) => key(
-          Text(d, style: TextStyle(fontSize: 28, fontWeight: FontWeight.w600, color: fg)),
+          Text(d, style: TextStyle(fontSize: 28, fontWeight: FontWeight.w500, color: fg)),
           () => onDigit(d),
           semantics: d,
         );

@@ -29,39 +29,27 @@ class ProfileScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
         children: [
-          GradientCard(
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white24),
-                  child: Avatar(client.displayName, size: 64),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(client.displayName, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800)),
-                      const SizedBox(height: 2),
-                      Text('Client n° ${client.accountNo}', style: const TextStyle(color: Colors.white70)),
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.18), borderRadius: BorderRadius.circular(20)),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.verified_rounded, size: 14, color: Colors.white),
-                            const SizedBox(width: 4),
-                            Text(client.status, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+          const SizedBox(height: 8),
+          Center(child: Avatar(client.displayName, size: 84)),
+          const SizedBox(height: 14),
+          Text(
+            client.displayName,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, letterSpacing: -0.5),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${Brand.phonePrefix} ${Fmt.phone(client.mobileNo)} · Client n° ${client.accountNo}',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: 10),
+          Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(color: AppColors.green.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
+              child: Text('Compte ${client.status.toLowerCase()}',
+                  style: const TextStyle(color: AppColors.green, fontSize: 12.5, fontWeight: FontWeight.w600)),
             ),
           ),
           const SizedBox(height: 18),

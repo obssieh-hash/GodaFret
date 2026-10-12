@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme.dart';
 import '../../widgets/brand.dart';
 
-/// Fond sombre dégradé commun aux écrans d'authentification.
+/// Écran d'authentification épuré : fond uni, barre du haut minimale.
 class AuthScaffold extends StatelessWidget {
   const AuthScaffold({super.key, required this.child, this.onBack, this.trailing});
 
@@ -16,61 +15,26 @@ class AuthScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.night,
-      body: Container(
-        decoration: const BoxDecoration(gradient: AppColors.nightGradient),
-        child: Stack(
+      body: SafeArea(
+        child: Column(
           children: [
-            Positioned(
-              top: -120,
-              right: -80,
-              child: _Glow(color: AppColors.gold.withValues(alpha: 0.22), size: 320),
-            ),
-            Positioned(
-              bottom: -140,
-              left: -100,
-              child: _Glow(color: const Color(0xFF2563EB).withValues(alpha: 0.25), size: 340),
-            ),
-            SafeArea(
-              child: Column(
+            SizedBox(
+              height: 52,
+              child: Row(
                 children: [
-                  if (onBack != null || trailing != null)
-                    Row(
-                      children: [
-                        if (onBack != null)
-                          IconButton(
-                            onPressed: onBack,
-                            icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-                          ),
-                        const Spacer(),
-                        ?trailing,
-                      ],
-                    ),
-                  Expanded(child: child),
+                  if (onBack != null)
+                    IconButton(onPressed: onBack, tooltip: 'Retour', icon: const Icon(Icons.arrow_back_rounded)),
+                  const Spacer(),
+                  ?trailing,
                 ],
               ),
             ),
+            Expanded(child: child),
           ],
         ),
       ),
     );
   }
-}
-
-class _Glow extends StatelessWidget {
-  const _Glow({required this.color, required this.size});
-  final Color color;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: RadialGradient(colors: [color, color.withValues(alpha: 0)]),
-        ),
-      );
 }
 
 /// Logo des écrans de connexion : l'icône de l'application.
@@ -82,22 +46,21 @@ class BrandLogo extends StatelessWidget {
   Widget build(BuildContext context) => AppIconImage(size: size);
 }
 
-/// Décoration de champ adaptée au fond sombre.
-InputDecoration darkField(String label, IconData icon, {Widget? suffix}) => InputDecoration(
-      labelText: label,
-      labelStyle: const TextStyle(color: Colors.white60),
-      prefixIcon: Icon(icon, color: Colors.white60),
-      suffixIcon: suffix,
-      filled: true,
-      fillColor: Colors.white.withValues(alpha: 0.07),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(color: AppColors.gold, width: 1.6),
-      ),
-      errorStyle: const TextStyle(color: Color(0xFFFF8FA3)),
-    );
+/// Grand titre aligné à gauche + sous-titre (style des écrans d'accueil).
+class AuthTitle extends StatelessWidget {
+  const AuthTitle(this.title, {super.key, this.subtitle});
+  final String title;
+  final String? subtitle;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w700, letterSpacing: -0.8, height: 1.15)),
+          if (subtitle != null) ...[
+            const SizedBox(height: 8),
+            Text(subtitle!, style: TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.4)),
+          ],
+        ],
+      );
+}
