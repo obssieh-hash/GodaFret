@@ -8,14 +8,15 @@ class Fmt {
       symbol: _symbol(currency),
       decimalDigits: decimals(currency),
     );
-    final text = f.format(value.abs());
+    // L'espace fine insécable (U+202F) n'existe pas dans Poppins : espace insécable classique.
+    final text = f.format(value.abs()).replaceAll('\u202f', '\u00a0');
     if (signed) return '${value < 0 ? '−' : '+'} $text';
     return value < 0 ? '−$text' : text;
   }
 
   static String compact(num value, {String currency = 'DJF'}) {
     final f = NumberFormat.compactCurrency(locale: 'fr_FR', symbol: _symbol(currency));
-    return f.format(value);
+    return f.format(value).replaceAll('\u202f', '\u00a0');
   }
 
   /// Nombre de décimales d'une devise (le franc Djibouti n'en a pas).

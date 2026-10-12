@@ -99,7 +99,7 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 ListTile(
                   leading: const IconBadge(Icons.dark_mode_outlined, color: AppColors.violet, size: 40),
-                  title: const Text('Apparence', style: TextStyle(fontWeight: FontWeight.w700)),
+                  title: const Text('Thème', style: TextStyle(fontWeight: FontWeight.w700)),
                   trailing: SegmentedButton<ThemeMode>(
                     showSelectedIcon: false,
                     style: const ButtonStyle(visualDensity: VisualDensity.compact),

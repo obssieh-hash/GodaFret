@@ -56,9 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Center(child: BrandLogo(size: 84)),
-                  const SizedBox(height: 28),
-                  const Center(child: BrandWordmark(onDark: true, size: 26)),
+                  const Center(child: BrandWordmark(onDark: true, size: 30)),
                   const SizedBox(height: 10),
                   const Text(
                     'Envoyez, payez, recevez. Simplement.',
