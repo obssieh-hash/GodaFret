@@ -34,6 +34,7 @@ class AppConfig {
     required this.mfaRequired,
     required this.currency,
     required this.lockAfter,
+    this.idleLock = const Duration(minutes: 3),
   });
 
   factory AppConfig.fromEnvironment() {
@@ -62,6 +63,9 @@ class AppConfig {
       lockAfter: const Duration(
         seconds: int.fromEnvironment('LOCK_AFTER_SECONDS', defaultValue: 60),
       ),
+      idleLock: const Duration(
+        seconds: int.fromEnvironment('IDLE_LOCK_SECONDS', defaultValue: 180),
+      ),
     );
   }
 
@@ -77,6 +81,9 @@ class AppConfig {
   /// Durée en arrière-plan au-delà de laquelle le code PIN est redemandé.
   final Duration lockAfter;
 
+  /// Durée sans interaction (application ouverte) au-delà de laquelle elle se verrouille.
+  final Duration idleLock;
+
   bool get isDemo => authMode == AuthMode.demo;
 
   AppConfig copyWith({AuthMode? authMode, String? fineractUrl, String? keycloakUrl}) => AppConfig(
@@ -89,6 +96,7 @@ class AppConfig {
         mfaRequired: mfaRequired,
         currency: currency,
         lockAfter: lockAfter,
+        idleLock: idleLock,
       );
 
   /// URLs déduites d'une adresse de serveur installé en réseau local

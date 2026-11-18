@@ -59,9 +59,11 @@ jobs:
           fi
 
       # allowCleartext : autorise le HTTP vers un serveur du réseau local (install-local.sh).
+      # --obfuscate : code Dart rendu illisible en cas de rétro-ingénierie de l'APK.
       - name: Construire l'APK
         run: |
-          flutter build apk --release --android-project-arg=allowCleartext=true
+          flutter build apk --release --android-project-arg=allowCleartext=true \
+            --obfuscate --split-debug-info=build/symbols
           cp build/app/outputs/flutter-apk/app-release.apk ../golden-bridge-pay.apk
 
       - uses: actions/upload-artifact@v4

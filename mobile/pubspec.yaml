@@ -1,7 +1,7 @@
 name: golden_bridge_pay
 description: "Golden Bridge Pay — portefeuille mobile de Golden Bridge Bank (Apache Fineract)."
 publish_to: 'none'
-version: 1.1.0+2
+version: 1.2.0+3
 
 environment:
   sdk: ^3.13.5

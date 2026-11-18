@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../accounts/history_screen.dart';
 import '../loans/loans_screen.dart';
+import '../markets/markets_screen.dart';
 import 'dashboard_screen.dart';
 import 'payments_screen.dart';
 
-/// Navigation principale : Accueil, Paiements, Prêts, Historique.
+/// Navigation principale : Accueil, Paiements, Marchés, Prêts, Historique.
 /// Le profil s'ouvre depuis l'avatar en haut de l'accueil.
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -23,8 +24,9 @@ class HomeShellState extends State<HomeShell> {
 
   static const tabHome = 0;
   static const tabPayments = 1;
-  static const tabLoans = 2;
-  static const tabHistory = 3;
+  static const tabMarkets = 2;
+  static const tabLoans = 3;
+  static const tabHistory = 4;
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +36,7 @@ class HomeShellState extends State<HomeShell> {
         children: const [
           DashboardScreen(),
           PaymentsScreen(),
+          MarketsScreen(),
           LoansScreen(),
           HistoryScreen(),
         ],
@@ -48,6 +51,11 @@ class HomeShellState extends State<HomeShell> {
           destinations: const [
             NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home_rounded), label: 'Accueil'),
             NavigationDestination(icon: Icon(Icons.swap_horiz_rounded), label: 'Paiements'),
+            NavigationDestination(
+              icon: Icon(Icons.candlestick_chart_outlined),
+              selectedIcon: Icon(Icons.candlestick_chart_rounded),
+              label: 'Marchés',
+            ),
             NavigationDestination(
               icon: Icon(Icons.account_balance_outlined),
               selectedIcon: Icon(Icons.account_balance_rounded),

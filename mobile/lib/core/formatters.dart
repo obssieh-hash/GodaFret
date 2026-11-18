@@ -37,6 +37,28 @@ class Fmt {
         _ => code,
       };
 
+  /// Cours d'un actif de marché (cotation en dollars, ou converti en Fdj).
+  /// Les indices s'affichent en points, sans devise.
+  static String price(double usd, {bool djf = false, bool points = false, double rate = 177.721}) {
+    final value = points || !djf ? usd : usd * rate;
+    final abs = value.abs();
+    final digits = points
+        ? 2
+        : djf
+            ? (abs >= 100 ? 0 : (abs >= 1 ? 2 : 4))
+            : (abs >= 1 ? 2 : (abs >= 0.01 ? 4 : 6));
+    final f = NumberFormat.decimalPatternDigits(locale: 'fr_FR', decimalDigits: digits);
+    final text = f.format(value).replaceAll('\u202f', '\u00a0');
+    if (points) return '$text\u00a0pts';
+    return djf ? '$text\u00a0Fdj' : '$text\u00a0\$';
+  }
+
+  /// Variation en pourcentage : « +2,35 % », « −0,80 % ».
+  static String percent(double pct) {
+    final f = NumberFormat.decimalPatternDigits(locale: 'fr_FR', decimalDigits: 2);
+    return '${pct < 0 ? '−' : '+'}${f.format(pct.abs())}\u00a0%';
+  }
+
   static String date(DateTime? d) => d == null ? '—' : DateFormat('d MMM yyyy', 'fr_FR').format(d);
   static String shortDate(DateTime? d) => d == null ? '—' : DateFormat('d MMM', 'fr_FR').format(d);
   static String dayHeader(DateTime d) {

@@ -121,6 +121,28 @@ void main() {
     await tester.tap(find.text('Paiements').last);
     await tester.pumpAndSettle();
     expect(find.text('Envoyer et payer'), findsOneWidget);
+    // 📈 Marchés : bourse et crypto (données indicatives hors ligne en test)
+    await tester.tap(find.text('Marchés').last);
+    await settle(tester);
+    expect(find.text('Plus fortes variations'), findsOneWidget);
+    await tester.tap(find.text('Crypto'));
+    await tester.pumpAndSettle();
+    expect(find.text('Bitcoin'), findsOneWidget);
+    expect(find.text('Apple'), findsNothing);
+    await tester.tap(find.text('Bourse'));
+    await tester.pumpAndSettle();
+    expect(find.text('Apple'), findsOneWidget);
+    await tester.tap(find.text('Apple'));
+    await settle(tester);
+    expect(find.text('Statistiques'), findsOneWidget);
+    await tester.tap(find.byTooltip('Retirer de ma liste'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Ajouter à ma liste'), findsOneWidget);
+    await tester.tap(find.byTooltip('Retour').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Fdj'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Fdj'), findsWidgets);
     await tester.tap(find.text('Prêts').last);
     await tester.pumpAndSettle();
     expect(find.text('Demander un prêt'), findsOneWidget);

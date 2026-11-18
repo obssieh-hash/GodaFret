@@ -11,8 +11,10 @@ import '../../widgets/transaction_tile.dart';
 import '../accounts/accounts_screen.dart';
 import '../loans/loan_detail_screen.dart';
 import '../loans/repayment_screen.dart';
+import '../markets/markets_screen.dart';
 import '../profile/notifications_screen.dart';
 import '../profile/profile_screen.dart';
+import '../profile/security_screen.dart';
 import '../wallet/receive_screen.dart';
 import '../wallet/send_screen.dart';
 import 'home_shell.dart';
@@ -38,6 +40,7 @@ class DashboardScreen extends StatelessWidget {
     final hidden = bank.balanceHidden;
     final next = bank.nextInstallment;
     final month = bank.monthlyStats(months: 1).first;
+    final device = context.select<SessionController, bool>((s) => s.device.compromised);
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: bank.refresh,
@@ -51,6 +54,17 @@ class DashboardScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (bank.error != null) ...[ErrorBanner(bank.error!, onRetry: bank.refresh), const SizedBox(height: 12)],
+                  if (device) ...[
+                    InkWell(
+                      onTap: () => push(context, const SecurityScreen()),
+                      child: const InfoBanner(
+                        'Appareil modifié (root) détecté : vos données sont moins protégées. Touchez pour en savoir plus.',
+                        icon: Icons.gpp_maybe_outlined,
+                        color: AppColors.red,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   // Opérations récentes
                   SurfaceCard(
                     padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
@@ -91,6 +105,8 @@ class DashboardScreen extends StatelessWidget {
                     const SizedBox(height: 12),
                     _NextInstallment(loan: next.$1, installment: next.$2, hidden: hidden),
                   ],
+                  const SizedBox(height: 12),
+                  MarketsPreviewCard(onSeeAll: () => HomeShell.of(context)?.go(HomeShellState.tabMarkets)),
                 ],
               ),
             ),
@@ -116,10 +132,16 @@ class _Hero extends StatelessWidget {
     final hidden = bank.balanceHidden;
     final amount = Fmt.money(main?.available ?? 0, currency: currency);
     final symbol = Fmt.symbol(currency);
-    final number = amount.replaceAll(symbol, '').trim();
 
     return Container(
       decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+      foregroundDecoration: BoxDecoration(
+        gradient: RadialGradient(
+          center: const Alignment(0.9, -0.7),
+          radius: 1.1,
+          colors: [AppColors.gold.withValues(alpha: 0.16), AppColors.gold.withValues(alpha: 0)],
+        ),
+      ),
       child: SafeArea(
         bottom: false,
         child: Padding(
@@ -192,20 +214,25 @@ class _Hero extends StatelessWidget {
                   child: hidden
                       ? const Text('• • • • •',
                           style: TextStyle(color: Colors.white, fontSize: 42, fontWeight: FontWeight.w700))
-                      : Text.rich(
-                          TextSpan(children: [
-                            TextSpan(text: number),
-                            TextSpan(
-                              text: ' $symbol',
-                              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: Colors.white70),
+                      : TweenAnimationBuilder<double>(
+                          tween: Tween(end: main?.available ?? 0),
+                          duration: const Duration(milliseconds: 900),
+                          curve: Curves.easeOutCubic,
+                          builder: (_, value, _) => Text.rich(
+                            TextSpan(children: [
+                              TextSpan(text: Fmt.money(value, currency: currency).replaceAll(symbol, '').trim()),
+                              TextSpan(
+                                text: ' $symbol',
+                                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: Colors.white70),
+                              ),
+                            ]),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 44,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -1.2,
+                              fontFeatures: [FontFeature.tabularFigures()],
                             ),
-                          ]),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 44,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -1.2,
-                            fontFeatures: [FontFeature.tabularFigures()],
                           ),
                         ),
                 ),

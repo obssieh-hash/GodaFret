@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../config/app_config.dart';
@@ -24,34 +25,74 @@ class SecurityScreen extends StatelessWidget {
       AuthMode.demo => 'Mode démonstration',
     };
 
+    final device = session.device;
+    final checks = <_Check>[
+      _Check(Icons.key_rounded, 'Double authentification', session.auth.mfaLabel, true),
+      const _Check(Icons.pin_rounded, 'Code PIN à 6 chiffres', 'Codes trop simples refusés, blocage après 5 erreurs', true),
+      _Check(
+        Icons.fingerprint_rounded,
+        'Biométrie',
+        session.biometricsEnabled ? 'Activée' : (session.biometricsAvailable ? 'Désactivée' : 'Non disponible'),
+        session.biometricsEnabled || !session.biometricsAvailable,
+      ),
+      _Check(
+        Icons.timer_outlined,
+        'Verrouillage automatique',
+        'Après ${config.lockAfter.inSeconds} s en arrière-plan ou ${config.idleLock.inMinutes} min sans activité',
+        true,
+      ),
+      _Check(
+        Icons.screenshot_monitor_outlined,
+        "Protection de l'écran",
+        device.screenProtected ? 'Captures et enregistrements bloqués' : 'Contenu masqué dans le multitâche',
+        true,
+      ),
+      _Check(
+        device.rooted ? Icons.gpp_bad_outlined : Icons.phonelink_lock_outlined,
+        "Intégrité de l'appareil",
+        !device.known
+            ? 'Vérification disponible sur Android'
+            : device.rooted
+                ? 'Appareil rooté : évitez les opérations sensibles'
+                : 'Aucune modification du système détectée',
+        !device.rooted,
+      ),
+      const _Check(Icons.lock_outline_rounded, 'Données chiffrées', 'Jetons et code stockés dans le coffre-fort du téléphone', true),
+    ];
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Sécurité')),
+      appBar: AppBar(title: const Text('Centre de sécurité')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
         children: [
-          GradientCard(
-            gradient: AppColors.tealGradient,
-            child: Row(
+          _ScoreCard(checks: checks),
+          const SizedBox(height: 18),
+          const SectionHeader('Protections'),
+          SurfaceCard(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Column(
               children: [
-                const Icon(Icons.verified_user_rounded, color: Colors.white, size: 48),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Protection forte active',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 17)),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Mot de passe · ${session.auth.mfaLabel} · code PIN',
-                        style: const TextStyle(color: Colors.white70, height: 1.3),
-                      ),
-                    ],
+                for (final c in checks)
+                  ListTile(
+                    leading: IconBadge(c.icon, size: 40),
+                    title: Text(c.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: Text(c.detail),
+                    trailing: Icon(
+                      c.ok ? Icons.check_circle_rounded : Icons.error_outline_rounded,
+                      color: c.ok ? AppColors.green : AppColors.amber,
+                    ),
                   ),
-                ),
               ],
             ),
           ),
+          if (session.previousAccess != null) ...[
+            const SizedBox(height: 12),
+            InfoBanner(
+              'Accès précédent : ${DateFormat("EEEE d MMMM 'à' HH:mm", 'fr_FR').format(session.previousAccess!)}. '
+              "Si ce n'était pas vous, changez votre mot de passe et votre code PIN.",
+              icon: Icons.history_rounded,
+            ),
+          ],
           const SizedBox(height: 18),
           const SectionHeader('Double authentification (MFA)'),
           SurfaceCard(
@@ -123,6 +164,73 @@ class SecurityScreen extends StatelessWidget {
             'Votre banque ne vous demandera jamais votre mot de passe, votre code PIN ou un code OTP par téléphone, SMS ou e-mail.',
             icon: Icons.privacy_tip_outlined,
             color: AppColors.amber,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Check {
+  const _Check(this.icon, this.title, this.detail, this.ok);
+  final IconData icon;
+  final String title;
+  final String detail;
+  final bool ok;
+}
+
+/// Score de protection : anneau de progression et résumé.
+class _ScoreCard extends StatelessWidget {
+  const _ScoreCard({required this.checks});
+  final List<_Check> checks;
+
+  @override
+  Widget build(BuildContext context) {
+    final ok = checks.where((c) => c.ok).length;
+    final ratio = ok / checks.length;
+    final full = ok == checks.length;
+    return GradientCard(
+      child: Row(
+        children: [
+          SizedBox(
+            width: 76,
+            height: 76,
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: ratio),
+              duration: const Duration(milliseconds: 900),
+              curve: Curves.easeOutCubic,
+              builder: (_, v, _) => Stack(
+                fit: StackFit.expand,
+                children: [
+                  CircularProgressIndicator(
+                    value: v,
+                    strokeWidth: 7,
+                    strokeCap: StrokeCap.round,
+                    backgroundColor: Colors.white.withValues(alpha: 0.15),
+                    valueColor: AlwaysStoppedAnimation(full ? AppColors.gold : AppColors.amber),
+                  ),
+                  Center(
+                    child: Text('$ok/${checks.length}',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 18),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(full ? 'Protection maximale' : 'Protection à renforcer',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 17)),
+                const SizedBox(height: 4),
+                Text(
+                  full ? 'Toutes les protections de votre compte sont actives.' : 'Activez les protections signalées ci-dessous.',
+                  style: const TextStyle(color: Colors.white70, height: 1.3),
+                ),
+              ],
+            ),
           ),
         ],
       ),

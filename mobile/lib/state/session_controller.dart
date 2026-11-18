@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../config/app_config.dart';
 import '../services/api_client.dart';
 import '../services/auth/auth_service.dart';
+import '../services/device_security.dart';
 import '../services/pin_service.dart';
 import '../services/secure_store.dart';
 
@@ -33,7 +34,18 @@ class SessionController extends ChangeNotifier {
   bool biometricsEnabled = false;
   DateTime? _pausedAt;
 
+  /// Intégrité de l'appareil (root, protection d'écran).
+  DeviceStatus device = const DeviceStatus();
+
+  /// Accès précédent (affiché dans le centre de sécurité).
+  DateTime? previousAccess;
+  DateTime? _currentAccess;
+
+  static const _lastAccessKey = 'last_access';
+
   Future<void> init() async {
+    device = await DeviceSecurity.check();
+    previousAccess = DateTime.tryParse(await store.read(_lastAccessKey) ?? '');
     lastUsername = await store.read(SecureStore.username);
     biometricsAvailable = await pin.biometricsAvailable();
     biometricsEnabled = await pin.biometricsEnabled();
@@ -77,6 +89,7 @@ class SessionController extends ChangeNotifier {
           await pin.setBiometricsEnabled(true);
           biometricsEnabled = true;
         }
+        await _stampAccess();
         stage = SessionStage.unlocked;
       });
 
@@ -121,10 +134,19 @@ class SessionController extends ChangeNotifier {
 
   Future<void> _restore() async {
     if (await auth.restore()) {
+      await _stampAccess();
       stage = SessionStage.unlocked;
     } else {
       await _forceLogout('Votre session a expiré. Reconnectez-vous.');
     }
+  }
+
+  /// Mémorise l'heure de cet accès ; l'accès précédent reste consultable.
+  Future<void> _stampAccess() async {
+    final now = DateTime.now();
+    if (_currentAccess != null) previousAccess = _currentAccess;
+    _currentAccess = now;
+    await store.write(_lastAccessKey, now.toIso8601String());
   }
 
   Future<void> logout() async {
